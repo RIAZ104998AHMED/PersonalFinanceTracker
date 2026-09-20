@@ -1,6 +1,22 @@
-@PersonalFinanceTracker.Api_HostAddress = http://localhost:5126
+@baseUrl = https://localhost:5126
 
-GET {{PersonalFinanceTracker.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Get all accounts
+GET {{baseUrl}}/api/accounts
 
-###
+
+### Get account by id
+GET {{baseUrl}}/api/accounts/11111111-1111-1111-1111-111111111111
+
+
+### Create account
+POST {{baseUrl}}/api/accounts
+Content-Type: application/json
+
+{
+  "name": "Savings Account",
+  "balance": 1000.00
+}
+
+
+### Unknown account - expected 404
+GET {{baseUrl}}/api/accounts/00000000-0000-0000-0000-000000000000
