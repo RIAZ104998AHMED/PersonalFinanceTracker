@@ -11,5 +11,14 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
   </ItemGroup>
-
+	<ItemGroup>
+		<Compile Remove="PersonalFinanceTracker.BusinessLogic\**\*.cs" />
+		<Compile Remove="PersonalFinanceTracker.DataAccess\**\*.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="PersonalFinanceTracker.BusinessLogic\PersonalFinanceTracker.BusinessLogic.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Models\" />
+	</ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PersonalFinanceTracker.Api.Models;
+using PersonalFinanceTracker.BusinessLogic.DTOs;
 
 namespace PersonalFinanceTracker.Api.Controllers
 {
