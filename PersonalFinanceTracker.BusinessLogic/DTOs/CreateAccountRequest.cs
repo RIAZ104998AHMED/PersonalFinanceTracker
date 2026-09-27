@@ -2,9 +2,16 @@
 
 namespace PersonalFinanceTracker.BusinessLogic.DTOs;
 
-public record CreateAccountRequest(
-    [property: Required, MaxLength(100)]
-    string Name,
+public class CreateAccountRequest
+{
+    [Required]
+    public string Name { get; set; } = string.Empty;
 
-    decimal Balance
-);
+    [Required]
+    [RegularExpression(
+        "^[A-Z]{3}$",
+        ErrorMessage = "Currency must be a three-letter uppercase code.")]
+    public string Currency { get; set; } = string.Empty;
+
+    public decimal StartAmount { get; set; }
+}

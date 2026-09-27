@@ -1,66 +1,39 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
+using PersonalFinanceTracker.BusinessLogic.Interfaces;
 
-namespace PersonalFinanceTracker.Api.Controllers
+namespace PersonalFinanceTracker.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AccountsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class AccountsController : ControllerBase
+    private readonly IAccountService _accountService;
+
+    public AccountsController(IAccountService accountService)
     {
-        private static readonly List<AccountDto> Accounts =
-        [
-            new(
-                Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                "Cash",
-                500.00m
-            ),
+        _accountService = accountService;
+    }
 
-            new(
-                Guid.Parse("22222222-2222-2222-2222-222222222222"),
-                "Bank Account",
-                2500.00m
-            )
-        ];
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<AccountDto>>> GetAll(
+        [FromQuery] bool includeArchived = false)
+    {
+        var accounts =
+            await _accountService.GetAllAsync(includeArchived);
 
-        // GET /api/accounts
-        [HttpGet]
-        public ActionResult<IEnumerable<AccountDto>> GetAll()
-        {
-            return Ok(Accounts);
-        }
+        return Ok(accounts);
+    }
 
-        // GET /api/accounts/{id}
-        [HttpGet("{id:guid}")]
-        public ActionResult<AccountDto> GetById(Guid id)
-        {
-            var account = Accounts.FirstOrDefault(a => a.Id == id);
+    [HttpPost]
+    public async Task<ActionResult<AccountDto>> Create(
+        [FromBody] CreateAccountRequest request)
+    {
+        var account =
+            await _accountService.CreateAsync(request);
 
-            if (account == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(account);
-        }
-
-        // POST /api/accounts
-        [HttpPost]
-        public ActionResult<AccountDto> Create(
-            [FromBody] CreateAccountRequest request)
-        {
-            var account = new AccountDto(
-                Guid.NewGuid(),
-                request.Name,
-                request.Balance
-            );
-
-            Accounts.Add(account);
-
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = account.Id },
-                account
-            );
-        }
+        return Created(
+            $"/api/accounts/{account.Id}",
+            account);
     }
 }
