@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PersonalFinanceTracker.DataAccess.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace PersonalFinanceTracker.DataAccess.Data;
 
-public class FinanceTrackerDbContext : DbContext
+public class FinanceTrackerDbContext
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
     public FinanceTrackerDbContext(
         DbContextOptions<FinanceTrackerDbContext> options)
