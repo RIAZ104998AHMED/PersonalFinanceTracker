@@ -46,9 +46,9 @@ public class AccountService : IAccountService
         Guid id)
     {
         var account = await _dbContext.Accounts
-            .FirstOrDefaultAsync(
-                a => a.Id == id &&
-                     a.UserId == userId);
+            .FirstOrDefaultAsync(a =>
+                a.Id == id &&
+                a.UserId == userId);
 
         if (account is null)
         {
@@ -74,9 +74,122 @@ public class AccountService : IAccountService
         };
 
         _dbContext.Accounts.Add(account);
+
         await _dbContext.SaveChangesAsync();
 
         return await MapAsync(account);
+    }
+
+    public async Task<AccountDto?> UpdateAsync(
+        Guid userId,
+        Guid id,
+        UpdateAccountRequest request)
+    {
+        var account = await _dbContext.Accounts
+            .FirstOrDefaultAsync(a =>
+                a.Id == id &&
+                a.UserId == userId);
+
+        if (account is null)
+        {
+            return null;
+        }
+
+        // R7:
+        // Currency cannot be changed when the account
+        // already has operations or transfers.
+        if (!string.Equals(
+                account.Currency,
+                request.Currency,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var hasOperations =
+                await _dbContext.Operations
+                    .AnyAsync(o => o.AccountId == id);
+
+            var hasTransfers =
+                await _dbContext.Transfers
+                    .AnyAsync(t =>
+                        t.FromAccountId == id ||
+                        t.ToAccountId == id);
+
+            if (hasOperations || hasTransfers)
+            {
+                throw new InvalidOperationException(
+                    "Currency cannot be changed because the account has operations or transfers.");
+            }
+        }
+
+        account.Name = request.Name.Trim();
+        account.Currency =
+            request.Currency.Trim().ToUpperInvariant();
+        account.StartAmount = request.StartAmount;
+
+        await _dbContext.SaveChangesAsync();
+
+        return await MapAsync(account);
+    }
+
+    public async Task<AccountDto?> SetArchivedAsync(
+        Guid userId,
+        Guid id,
+        bool isArchived)
+    {
+        var account = await _dbContext.Accounts
+            .FirstOrDefaultAsync(a =>
+                a.Id == id &&
+                a.UserId == userId);
+
+        if (account is null)
+        {
+            return null;
+        }
+
+        account.IsArchived = isArchived;
+
+        await _dbContext.SaveChangesAsync();
+
+        return await MapAsync(account);
+    }
+
+    public async Task<bool> DeleteAsync(
+        Guid userId,
+        Guid id)
+    {
+        var account = await _dbContext.Accounts
+            .FirstOrDefaultAsync(a =>
+                a.Id == id &&
+                a.UserId == userId);
+
+        if (account is null)
+        {
+            return false;
+        }
+
+        // R6:
+        // Account cannot be deleted if it has
+        // at least one operation or transfer.
+        var hasOperations =
+            await _dbContext.Operations
+                .AnyAsync(o => o.AccountId == id);
+
+        var hasTransfers =
+            await _dbContext.Transfers
+                .AnyAsync(t =>
+                    t.FromAccountId == id ||
+                    t.ToAccountId == id);
+
+        if (hasOperations || hasTransfers)
+        {
+            throw new InvalidOperationException(
+                "Account cannot be deleted because it has operations or transfers.");
+        }
+
+        _dbContext.Accounts.Remove(account);
+
+        await _dbContext.SaveChangesAsync();
+
+        return true;
     }
 
     private async Task<AccountDto> MapAsync(Account account)
@@ -107,6 +220,7 @@ public class AccountService : IAccountService
             - expense
             + incomingTransfers
             - outgoingTransfers;
+
         return new AccountDto(
             account.Id,
             account.Name,

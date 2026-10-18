@@ -18,6 +18,7 @@ public class AccountsController : ControllerBase
         _accountService = accountService;
     }
 
+    // GET /api/accounts?includeArchived=false
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AccountDto>>> GetAll(
         [FromQuery] bool includeArchived = false)
@@ -37,6 +38,7 @@ public class AccountsController : ControllerBase
         return Ok(accounts);
     }
 
+    // GET /api/accounts/{id}
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<AccountDto>> GetById(Guid id)
     {
@@ -60,6 +62,7 @@ public class AccountsController : ControllerBase
         return Ok(account);
     }
 
+    // POST /api/accounts
     [HttpPost]
     public async Task<ActionResult<AccountDto>> Create(
         [FromBody] CreateAccountRequest request)
@@ -80,6 +83,84 @@ public class AccountsController : ControllerBase
             nameof(GetById),
             new { id = account.Id },
             account);
+    }
+
+    // PUT /api/accounts/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<AccountDto>> Update(
+        Guid id,
+        [FromBody] UpdateAccountRequest request)
+    {
+        var userId = GetUserId();
+
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var account =
+            await _accountService.UpdateAsync(
+                userId.Value,
+                id,
+                request);
+
+        if (account is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(account);
+    }
+
+    // PATCH /api/accounts/{id}/archive
+    [HttpPatch("{id:guid}/archive")]
+    public async Task<ActionResult<AccountDto>> Archive(
+        Guid id,
+        [FromBody] ArchiveAccountRequest request)
+    {
+        var userId = GetUserId();
+
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var account =
+            await _accountService.SetArchivedAsync(
+                userId.Value,
+                id,
+                request.IsArchived);
+
+        if (account is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(account);
+    }
+
+    // DELETE /api/accounts/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var userId = GetUserId();
+
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var deleted =
+            await _accountService.DeleteAsync(
+                userId.Value,
+                id);
+
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
     }
 
     private Guid? GetUserId()
