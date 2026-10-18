@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddDataAccess(configuration);
 
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }

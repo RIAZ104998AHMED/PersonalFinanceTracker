@@ -8,9 +8,6 @@ namespace PersonalFinanceTracker.BusinessLogic.Services;
 
 public class AccountService : IAccountService
 {
-    private static readonly Guid DemoUserId =
-        Guid.Parse("11111111-1111-1111-1111-111111111111");
-
     private readonly FinanceTrackerDbContext _dbContext;
 
     public AccountService(FinanceTrackerDbContext dbContext)
@@ -18,35 +15,57 @@ public class AccountService : IAccountService
         _dbContext = dbContext;
     }
 
-    public async Task<IReadOnlyList<AccountDto>> GetAllAsync(
+    public async Task<IEnumerable<AccountDto>> GetAllAsync(
+        Guid userId,
         bool includeArchived = false)
     {
-        var accounts = await _dbContext.Accounts
-            .AsNoTracking()
-            .Where(a =>
-                a.UserId == DemoUserId &&
-                (includeArchived || !a.IsArchived))
+        var query = _dbContext.Accounts
+            .Where(a => a.UserId == userId);
+
+        if (!includeArchived)
+        {
+            query = query.Where(a => !a.IsArchived);
+        }
+
+        var accounts = await query
+            .OrderBy(a => a.CreatedAt)
             .ToListAsync();
 
         var result = new List<AccountDto>();
 
         foreach (var account in accounts)
         {
-            var balance = await CalculateBalanceAsync(account);
-
-            result.Add(MapToDto(account, balance));
+            result.Add(await MapAsync(account));
         }
 
         return result;
     }
 
+    public async Task<AccountDto?> GetByIdAsync(
+        Guid userId,
+        Guid id)
+    {
+        var account = await _dbContext.Accounts
+            .FirstOrDefaultAsync(
+                a => a.Id == id &&
+                     a.UserId == userId);
+
+        if (account is null)
+        {
+            return null;
+        }
+
+        return await MapAsync(account);
+    }
+
     public async Task<AccountDto> CreateAsync(
+        Guid userId,
         CreateAccountRequest request)
     {
         var account = new Account
         {
             Id = Guid.NewGuid(),
-            UserId = DemoUserId,
+            UserId = userId,
             Name = request.Name.Trim(),
             Currency = request.Currency.Trim().ToUpperInvariant(),
             StartAmount = request.StartAmount,
@@ -57,50 +76,37 @@ public class AccountService : IAccountService
         _dbContext.Accounts.Add(account);
         await _dbContext.SaveChangesAsync();
 
-        return MapToDto(account, account.StartAmount);
+        return await MapAsync(account);
     }
 
-    private async Task<decimal> CalculateBalanceAsync(Account account)
+    private async Task<AccountDto> MapAsync(Account account)
     {
-        var income =
-            await _dbContext.Operations
-                .Where(o =>
-                    o.AccountId == account.Id &&
-                    o.Type == OperationType.Income)
-                .SumAsync(o => (decimal?)o.Amount)
-            ?? 0m;
+        var income = await _dbContext.Operations
+            .Where(o =>
+                o.AccountId == account.Id &&
+                o.Type == OperationType.Income)
+            .SumAsync(o => (decimal?)o.Amount) ?? 0m;
 
-        var expense =
-            await _dbContext.Operations
-                .Where(o =>
-                    o.AccountId == account.Id &&
-                    o.Type == OperationType.Expense)
-                .SumAsync(o => (decimal?)o.Amount)
-            ?? 0m;
+        var expense = await _dbContext.Operations
+            .Where(o =>
+                o.AccountId == account.Id &&
+                o.Type == OperationType.Expense)
+            .SumAsync(o => (decimal?)o.Amount) ?? 0m;
 
-        var incomingTransfers =
-            await _dbContext.Transfers
-                .Where(t => t.ToAccountId == account.Id)
-                .SumAsync(t => (decimal?)t.Amount)
-            ?? 0m;
+        var incomingTransfers = await _dbContext.Transfers
+            .Where(t => t.ToAccountId == account.Id)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0m;
 
-        var outgoingTransfers =
-            await _dbContext.Transfers
-                .Where(t => t.FromAccountId == account.Id)
-                .SumAsync(t => (decimal?)t.Amount)
-            ?? 0m;
+        var outgoingTransfers = await _dbContext.Transfers
+            .Where(t => t.FromAccountId == account.Id)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0m;
 
-        return account.StartAmount
-               + income
-               - expense
-               + incomingTransfers
-               - outgoingTransfers;
-    }
-
-    private static AccountDto MapToDto(
-        Account account,
-        decimal balance)
-    {
+        var balance =
+            account.StartAmount
+            + income
+            - expense
+            + incomingTransfers
+            - outgoingTransfers;
         return new AccountDto(
             account.Id,
             account.Name,
