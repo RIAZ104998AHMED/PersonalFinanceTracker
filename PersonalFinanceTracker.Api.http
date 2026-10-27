@@ -1,6 +1,7 @@
 @baseUrl = http://localhost:5126
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OTk0YTBhYy04MjI2LTQyOTUtYjIyYS1mMTI4ZGY1NDQyZjgiLCJlbWFpbCI6IndlZWs3dGVzdEBleGFtcGxlLmNvbSIsIm5hbWUiOiJXZWVrIFNldmVuIFVzZXIgVXBkYXRlZCIsImV4cCI6MTc5MjM0NDg4MiwiaXNzIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5BcGkiLCJhdWQiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkNsaWVudCJ9.6CrZgVCZhGydUagB73gfgxQqZVeufJTl7N7FAjlCUW0
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OTk0YTBhYy04MjI2LTQyOTUtYjIyYS1mMTI4ZGY1NDQyZjgiLCJlbWFpbCI6IndlZWs3dGVzdEBleGFtcGxlLmNvbSIsIm5hbWUiOiJXZWVrIFNldmVuIFVzZXIgVXBkYXRlZCIsImV4cCI6MTc5MzA4NDg0MywiaXNzIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5BcGkiLCJhdWQiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkNsaWVudCJ9.Albxup2lXrJMmCEnaHYjBadYvhbk5k_-l1tOZ4lc3UY
 @accountId = 1ca2c2da-6ade-4ff2-8403-54bea984260f
+@categoryId = dcfbcc97-eaf7-4b17-9d4b-d501ee2956c0
 
 ### Register
 POST {{baseUrl}}/api/auth/register
@@ -17,7 +18,7 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "week7test2@example.com",
+  "email": "week7test@example.com",
   "password": "Week7Test123"
 }
 
@@ -42,6 +43,13 @@ Authorization: Bearer {{token}}
 POST {{baseUrl}}/api/accounts
 Authorization: Bearer {{token}}
 Content-Type: application/json
+
+{
+  "name": "Savings Account",
+  "currency": "USD",
+  "startAmount": 1000.00
+}
+
 ### Get one account
 GET {{baseUrl}}/api/accounts/{{accountId}}
 Authorization: Bearer {{token}}
@@ -83,8 +91,38 @@ Content-Type: application/json
 DELETE {{baseUrl}}/api/accounts/{{accountId}}
 Authorization: Bearer {{token}}
 
+
+### ================================
+### CATEGORIES
+### ================================
+
+### Get all categories
+GET {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+
+### Get expense categories
+GET {{baseUrl}}/api/categories?type=Expense
+Authorization: Bearer {{token}}
+
+### Create category
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
 {
-  "name": "Savings Account",
-  "currency": "USD",
-  "startAmount": 1000.00
+  "name": "Travel",
+  "type": "Expense"
 }
+
+### Update category
+PUT {{baseUrl}}/api/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Holiday Travel"
+}
+
+### Delete category
+DELETE {{baseUrl}}/api/categories/{{categoryId}}
+Authorization: Bearer {{token}}
