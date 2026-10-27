@@ -15,10 +15,11 @@ public interface IAccountService
     Task<AccountDto> CreateAsync(
         Guid userId,
         CreateAccountRequest request);
+
     Task<AccountDto?> UpdateAsync(
-    Guid userId,
-    Guid id,
-    UpdateAccountRequest request);
+        Guid userId,
+        Guid id,
+        UpdateAccountRequest request);
 
     Task<AccountDto?> SetArchivedAsync(
         Guid userId,

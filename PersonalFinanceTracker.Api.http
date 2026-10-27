@@ -3,6 +3,12 @@
 @accountId = 1ca2c2da-6ade-4ff2-8403-54bea984260f
 @categoryId = dcfbcc97-eaf7-4b17-9d4b-d501ee2956c0
 
+@token2 = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4ODM3OTIyMy0xNjQ3LTQxZGMtYTMxZS1kNTAzZjUyYmMzYTUiLCJlbWFpbCI6IndlZWs3dGVzdDJAZXhhbXBsZS5jb20iLCJuYW1lIjoiV2VlayBTZXZlbiBUZXN0IiwiZXhwIjoxNzkzMDg4MDMxLCJpc3MiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkFwaSIsImF1ZCI6IlBlcnNvbmFsRmluYW5jZVRyYWNrZXIuQ2xpZW50In0.x5cV5xhU6VujsCXfUMkJZNETe5XnJsu36d0j0sIQc2A
+@otherUserAccountId = fb2a8829-fa66-44e6-a3ee-f7945a6403c0
+
+@demoToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJleHAiOjE3OTMwODkyNDAsImlzcyI6IlBlcnNvbmFsRmluYW5jZVRyYWNrZXIuQXBpIiwiYXVkIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5DbGllbnQifQ.S36jNFoKZ7EaloGPFKhCEgy1JI8ziv14-W8ZD-40ALc
+@demoDebitAccountId = c0000000-0000-0000-0000-000000000002
+
 ### Register
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
@@ -13,6 +19,7 @@ Content-Type: application/json
   "name": "Week Seven Test"
 }
 
+
 ### Login
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
@@ -20,6 +27,35 @@ Content-Type: application/json
 {
   "email": "week7test@example.com",
   "password": "Week7Test123"
+}
+
+### Login second user
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "week7test2@example.com",
+  "password": "Week7Test123"
+}
+
+### Create account for second user
+POST {{baseUrl}}/api/accounts
+Authorization: Bearer {{token2}}
+Content-Type: application/json
+
+{
+  "name": "Second User Account",
+  "currency": "EUR",
+  "startAmount": 500.00
+}
+
+### Login demo user
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@fintracker.local",
+  "password": "Demo12345"
 }
 
 ### Current user
@@ -114,6 +150,16 @@ Content-Type: application/json
   "type": "Expense"
 }
 
+### R10 - Duplicate category - expect 409
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Travel",
+  "type": "Expense"
+}
+
 ### Update category
 PUT {{baseUrl}}/api/categories/{{categoryId}}
 Authorization: Bearer {{token}}
@@ -123,6 +169,49 @@ Content-Type: application/json
   "name": "Holiday Travel"
 }
 
+### R11 - Rename system category - expect 403
+PUT {{baseUrl}}/api/categories/a0000000-0000-0000-0000-000000000001
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "New Salary"
+}
+
+### Category does not exist - expect 404
+PUT {{baseUrl}}/api/categories/99999999-9999-9999-9999-999999999999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test"
+}
+
 ### Delete category
 DELETE {{baseUrl}}/api/categories/{{categoryId}}
 Authorization: Bearer {{token}}
+### Account does not exist - expect 404
+GET {{baseUrl}}/api/accounts/99999999-9999-9999-9999-999999999999
+Authorization: Bearer {{token}}
+
+### R15 - Other user's account - expect 403
+GET {{baseUrl}}/api/accounts/{{otherUserAccountId}}
+Authorization: Bearer {{token}}
+
+### R6 - Delete used account - expect 409
+DELETE {{baseUrl}}/api/accounts/{{demoDebitAccountId}}
+Authorization: Bearer {{demoToken}}
+### Get demo accounts
+GET {{baseUrl}}/api/accounts?includeArchived=false
+Authorization: Bearer {{demoToken}}
+
+### R7 - Change currency of used account - expect 409
+PUT {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "name": "Debit card",
+  "currency": "USD",
+  "startAmount": 42000.00
+}

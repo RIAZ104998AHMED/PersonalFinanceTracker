@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
+using PersonalFinanceTracker.BusinessLogic.Exceptions;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
 using PersonalFinanceTracker.DataAccess.Data;
 using PersonalFinanceTracker.DataAccess.Entities;
@@ -45,21 +46,23 @@ public class CategoryService : ICategoryService
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException(
+            throw new BadRequestException(
                 "Category name is required.");
         }
 
         if (!request.Type.HasValue)
         {
-            throw new ArgumentException(
+            throw new BadRequestException(
                 "Category type is required.");
         }
 
         var type = request.Type.Value;
 
         // R10:
-        // A category name must be unique for the user and type.
-        // It also cannot duplicate a system category of the same type.
+        // Category names must be unique per user and type,
+        // case-insensitive.
+        // A user category also cannot duplicate
+        // a system category of the same type.
         var normalizedName = name.ToLower();
 
         var duplicateExists =
@@ -70,7 +73,7 @@ public class CategoryService : ICategoryService
 
         if (duplicateExists)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "A category with this name and type already exists.");
         }
 
@@ -99,7 +102,7 @@ public class CategoryService : ICategoryService
 
         if (category is null)
         {
-            throw new KeyNotFoundException(
+            throw new NotFoundException(
                 "Category was not found.");
         }
 
@@ -107,7 +110,7 @@ public class CategoryService : ICategoryService
         // System categories cannot be renamed.
         if (category.UserId is null)
         {
-            throw new UnauthorizedAccessException(
+            throw new ForbiddenException(
                 "System categories cannot be renamed.");
         }
 
@@ -115,7 +118,7 @@ public class CategoryService : ICategoryService
         // Category belongs to another user.
         if (category.UserId != userId)
         {
-            throw new UnauthorizedAccessException(
+            throw new ForbiddenException(
                 "You do not have access to this category.");
         }
 
@@ -123,13 +126,15 @@ public class CategoryService : ICategoryService
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException(
+            throw new BadRequestException(
                 "Category name is required.");
         }
 
         var normalizedName = name.ToLower();
 
-        // R10
+        // R10:
+        // Prevent duplicate category names
+        // for the same type.
         var duplicateExists =
             await _dbContext.Categories.AnyAsync(c =>
                 c.Id != id &&
@@ -139,7 +144,7 @@ public class CategoryService : ICategoryService
 
         if (duplicateExists)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "A category with this name and type already exists.");
         }
 
@@ -159,32 +164,35 @@ public class CategoryService : ICategoryService
 
         if (category is null)
         {
-            throw new KeyNotFoundException(
+            throw new NotFoundException(
                 "Category was not found.");
         }
 
-        // R11
+        // R11:
+        // System categories cannot be deleted.
         if (category.UserId is null)
         {
-            throw new UnauthorizedAccessException(
+            throw new ForbiddenException(
                 "System categories cannot be deleted.");
         }
 
-        // R15
+        // R15:
+        // Category belongs to another user.
         if (category.UserId != userId)
         {
-            throw new UnauthorizedAccessException(
+            throw new ForbiddenException(
                 "You do not have access to this category.");
         }
 
         // R12:
-        // A category used by an operation cannot be deleted.
+        // A category referenced by an operation
+        // cannot be deleted.
         var isUsed = await _dbContext.Operations
             .AnyAsync(o => o.CategoryId == id);
 
         if (isUsed)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "Category cannot be deleted because it is used by an operation.");
         }
 
