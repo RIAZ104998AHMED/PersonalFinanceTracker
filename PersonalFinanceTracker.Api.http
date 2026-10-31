@@ -6,7 +6,7 @@
 @token2 = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4ODM3OTIyMy0xNjQ3LTQxZGMtYTMxZS1kNTAzZjUyYmMzYTUiLCJlbWFpbCI6IndlZWs3dGVzdDJAZXhhbXBsZS5jb20iLCJuYW1lIjoiV2VlayBTZXZlbiBUZXN0IiwiZXhwIjoxNzkzMDg4MDMxLCJpc3MiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkFwaSIsImF1ZCI6IlBlcnNvbmFsRmluYW5jZVRyYWNrZXIuQ2xpZW50In0.x5cV5xhU6VujsCXfUMkJZNETe5XnJsu36d0j0sIQc2A
 @otherUserAccountId = fb2a8829-fa66-44e6-a3ee-f7945a6403c0
 
-@demoToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJleHAiOjE3OTMwODkyNDAsImlzcyI6IlBlcnNvbmFsRmluYW5jZVRyYWNrZXIuQXBpIiwiYXVkIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5DbGllbnQifQ.S36jNFoKZ7EaloGPFKhCEgy1JI8ziv14-W8ZD-40ALc
+@demoToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJleHAiOjE3OTM0Mzk5MjQsImlzcyI6IlBlcnNvbmFsRmluYW5jZVRyYWNrZXIuQXBpIiwiYXVkIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5DbGllbnQifQ.a_bulgmlaKluGoc5w6nT7JToareidUvx10qOV5fH5v8
 @demoDebitAccountId = c0000000-0000-0000-0000-000000000002
 
 ### Register
@@ -215,3 +215,313 @@ Content-Type: application/json
   "currency": "USD",
   "startAmount": 42000.00
 }
+### ============================================
+### WEEK 8 - OPERATIONS
+### ============================================
+
+@operationId = 5d2eb59b-ffc0-4900-bd57-a57cd544fec7
+
+
+### Get operations - default paging/sorting
+GET {{baseUrl}}/api/operations
+Authorization: Bearer {{demoToken}}
+
+
+### Get operations with paging
+GET {{baseUrl}}/api/operations?page=1&pageSize=10
+Authorization: Bearer {{demoToken}}
+
+
+### Filter operations by account
+GET {{baseUrl}}/api/operations?accountId=c0000000-0000-0000-0000-000000000002&page=1&pageSize=20
+Authorization: Bearer {{demoToken}}
+
+
+### Filter Expense operations
+GET {{baseUrl}}/api/operations?type=Expense&page=1&pageSize=20
+Authorization: Bearer {{demoToken}}
+
+
+### Filter by date
+GET {{baseUrl}}/api/operations?from=2026-09-01&to=2026-09-30
+Authorization: Bearer {{demoToken}}
+
+
+### Sort by amount descending
+GET {{baseUrl}}/api/operations?sortBy=amountDesc
+Authorization: Bearer {{demoToken}}
+
+
+### Create operation
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "b0000000-0000-0000-0000-000000000001",
+  "type": "Expense",
+  "amount": 1250.00,
+  "date": "2026-10-05",
+  "comment": "Groceries"
+}
+
+
+### Get one operation
+GET {{baseUrl}}/api/operations/{{operationId}}
+Authorization: Bearer {{demoToken}}
+
+
+### Update operation
+PUT {{baseUrl}}/api/operations/{{operationId}}
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "b0000000-0000-0000-0000-000000000002",
+  "type": "Expense",
+  "amount": 1500.00,
+  "date": "2026-10-05",
+  "comment": "Dinner"
+}
+
+
+### Delete operation
+DELETE {{baseUrl}}/api/operations/{{operationId}}
+Authorization: Bearer {{demoToken}}
+
+
+### ============================================
+### OPERATION BUSINESS RULE TESTS
+### ============================================
+
+### R2 - Amount must be positive - expect 400
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "b0000000-0000-0000-0000-000000000001",
+  "type": "Expense",
+  "amount": -10.00,
+  "date": "2026-10-05",
+  "comment": "Invalid amount"
+}
+
+
+### R2 - More than 2 decimal places - expect 400
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "b0000000-0000-0000-0000-000000000001",
+  "type": "Expense",
+  "amount": 10.123,
+  "date": "2026-10-05",
+  "comment": "Invalid decimals"
+}
+
+
+### R3 - Category type mismatch - expect 400
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "a0000000-0000-0000-0000-000000000001",
+  "type": "Expense",
+  "amount": 100.00,
+  "date": "2026-10-05",
+  "comment": "Wrong category type"
+}
+
+
+### R4 - Future date - expect 400
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "b0000000-0000-0000-0000-000000000001",
+  "type": "Expense",
+  "amount": 100.00,
+  "date": "2027-01-01",
+  "comment": "Future operation"
+}
+
+
+### Invalid paging - expect 400
+GET {{baseUrl}}/api/operations?page=0&pageSize=20
+Authorization: Bearer {{demoToken}}
+
+
+### Invalid pageSize - expect 400
+GET {{baseUrl}}/api/operations?page=1&pageSize=101
+Authorization: Bearer {{demoToken}}
+
+
+### Invalid date range - expect 400
+GET {{baseUrl}}/api/operations?from=2026-10-20&to=2026-10-01
+Authorization: Bearer {{demoToken}}
+
+
+### Invalid sort - expect 400
+GET {{baseUrl}}/api/operations?sortBy=wrongSort
+Authorization: Bearer {{demoToken}}
+
+### R5 setup - archive demo Debit card
+PATCH {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002/archive
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "isArchived": true
+}
+
+### R5 - Create operation on archived account - expect 409
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "b0000000-0000-0000-0000-000000000001",
+  "type": "Expense",
+  "amount": 100.00,
+  "date": "2026-10-05",
+  "comment": "Archived account test"
+}
+
+### R5 cleanup - unarchive demo Debit card
+PATCH {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002/archive
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "isArchived": false
+}
+### ============================================
+### WEEK 8 - TRANSFERS
+### ============================================
+
+@transferId = defa4344-b201-4537-987d-3fe1dd0472a1
+
+
+### Get all transfers - expect 200
+GET {{baseUrl}}/api/transfers
+Authorization: Bearer {{demoToken}}
+
+
+### Get transfers with paging - expect 200
+GET {{baseUrl}}/api/transfers?page=1&pageSize=10
+Authorization: Bearer {{demoToken}}
+
+
+### Create transfer - expect 201
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "fromAccountId": "c0000000-0000-0000-0000-000000000002",
+  "toAccountId": "c0000000-0000-0000-0000-000000000001",
+  "amount": 1000.00,
+  "date": "2026-10-05",
+  "comment": "Transfer test"
+}
+
+
+### Get one transfer - expect 200
+GET {{baseUrl}}/api/transfers/{{transferId}}
+Authorization: Bearer {{demoToken}}
+
+
+### Delete transfer - expect 204
+DELETE {{baseUrl}}/api/transfers/{{transferId}}
+Authorization: Bearer {{demoToken}}
+
+
+### ============================================
+### TRANSFER BUSINESS RULE TESTS
+### ============================================
+
+### R2 - Negative amount - expect 400
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "fromAccountId": "c0000000-0000-0000-0000-000000000002",
+  "toAccountId": "c0000000-0000-0000-0000-000000000001",
+  "amount": -100.00,
+  "date": "2026-10-05"
+}
+
+
+### R2 - More than two decimals - expect 400
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "fromAccountId": "c0000000-0000-0000-0000-000000000002",
+  "toAccountId": "c0000000-0000-0000-0000-000000000001",
+  "amount": 100.123,
+  "date": "2026-10-05"
+}
+
+
+### R4 - Future date - expect 400
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "fromAccountId": "c0000000-0000-0000-0000-000000000002",
+  "toAccountId": "c0000000-0000-0000-0000-000000000001",
+  "amount": 100.00,
+  "date": "2027-01-01"
+}
+
+
+### R8 - Same account - expect 400
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "fromAccountId": "c0000000-0000-0000-0000-000000000002",
+  "toAccountId": "c0000000-0000-0000-0000-000000000002",
+  "amount": 100.00,
+  "date": "2026-10-05"
+}
+
+
+### R8 - Different currencies - expect 400
+### Debit card = RUB, Savings = USD
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{demoToken}}
+Content-Type: application/json
+
+{
+  "fromAccountId": "c0000000-0000-0000-0000-000000000002",
+  "toAccountId": "c0000000-0000-0000-0000-000000000003",
+  "amount": 100.00,
+  "date": "2026-10-05"
+}
+
+
+### Invalid paging - expect 400
+GET {{baseUrl}}/api/transfers?page=0&pageSize=20
+Authorization: Bearer {{demoToken}}
+
+
+### Invalid pageSize - expect 400
+GET {{baseUrl}}/api/transfers?page=1&pageSize=101
+Authorization: Bearer {{demoToken}}
