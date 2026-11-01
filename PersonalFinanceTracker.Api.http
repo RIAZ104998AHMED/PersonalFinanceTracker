@@ -684,3 +684,19 @@ Content-Type: application/json
 {
   "refreshToken": "{{newRefreshToken}}"
 }
+
+### ============================================
+### WEEK 10 - FRESH DATABASE TEST
+### ============================================
+
+### Fresh database demo login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@fintracker.local",
+  "password": "Demo12345"
+}
+### Fresh database accounts test
+GET {{baseUrl}}/api/accounts?includeArchived=false
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJuYmYiOjE3OTM1NTkxNDgsImV4cCI6MTc5MzU2MDA0OCwiaXNzIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5BcGkiLCJhdWQiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkNsaWVudCJ9.mKlVTutWH0KV2a60PeaV1llIqdRTvGTCafNw2pzRS9I

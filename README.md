@@ -198,7 +198,6 @@ Before committing the repository, real JWT access tokens should be replaced with
 A fresh token can be obtained through the login endpoint before testing protected endpoints.
 
 ## Bonuses
-## Bonuses
 
 ### Refresh Tokens and Logout
 
