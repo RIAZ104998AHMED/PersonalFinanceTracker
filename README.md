@@ -198,7 +198,56 @@ Before committing the repository, real JWT access tokens should be replaced with
 A fresh token can be obtained through the login endpoint before testing protected endpoints.
 
 ## Bonuses
+## Bonuses
 
+### Refresh Tokens and Logout
+
+The refresh-token and logout bonus functionality is implemented.
+
+Implemented endpoints:
+
+```text
+POST /api/auth/refresh
+POST /api/auth/logout
+```
+
+Refresh tokens are opaque random values. Only their SHA-256 hashes are stored in the database.
+
+Each refresh token has an expiration time. When a refresh token is successfully used, the old token is revoked and replaced by a new refresh token.
+
+Logout revokes the supplied refresh token so that it cannot be used again.
+
+When refresh-token functionality is enabled, JWT access tokens expire after 15 minutes.
+
+### Unit Tests
+
+A separate xUnit project named `PersonalFinanceTracker.Tests` is included.
+
+The tests use EF Core InMemory and cover the required business rules, including:
+
+- R1 — account balance calculation
+- R3 — category and operation type matching
+- R5 — archived account restrictions
+- R6 — deletion of accounts with operations/transfers
+- R7 — account currency change restrictions
+- R8 — transfer validation
+- R10 — category uniqueness
+- R12 — deletion of categories used by operations
+
+Current test result:
+
+```text
+Total: 12
+Passed: 12
+Failed: 0
+Skipped: 0
+```
+
+Run the tests with:
+
+```powershell
+dotnet test
+```
 
 ### Unit Tests
 

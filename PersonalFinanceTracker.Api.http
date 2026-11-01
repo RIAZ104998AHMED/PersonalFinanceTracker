@@ -626,3 +626,61 @@ Authorization: Bearer {{demoToken}}
 ### R15 - another user's account - expect 403
 GET {{baseUrl}}/api/statistics?accountId={{otherUserAccountId}}&from=2026-09-01&to=2026-09-30
 Authorization: Bearer {{demoToken}}
+
+### ============================================
+### BONUS - REFRESH TOKEN + LOGOUT
+### ============================================
+
+@bonusAccessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJuYmYiOjE3OTM1NDkwNjgsImV4cCI6MTc5MzU0OTk2OCwiaXNzIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5BcGkiLCJhdWQiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkNsaWVudCJ9.bUo_zjm0gVAgJDSk-fdflxuuB8K6h_7w-sBiIZE4XVc
+@bonusRefreshToken =C8E6CEC58AF71028DF690AA009DC5FB8FFB227253C94520B534921B38F74E3DDDA8BB33619EE466809CA14D7095AF988B0FEB1DBEB327BA2886AC59CCFCB09B8
+@newRefreshToken = 076474B222D7989FF773B409B8BB5953D5F57DE2183B48D3F16F2EC983F6F536239A8735B8A4B48F0E8AC28C8D57297B2602197DBB0A8AE64FEBB872B504F9FB
+
+
+### Bonus login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@fintracker.local",
+  "password": "Demo12345"
+}
+
+
+### B1 - Refresh token - expect 200
+POST {{baseUrl}}/api/auth/refresh
+Authorization: Bearer {{bonusAccessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{bonusRefreshToken}}"
+}
+
+
+### B1 - Reuse old refresh token after rotation - expect 401
+POST {{baseUrl}}/api/auth/refresh
+Authorization: Bearer {{bonusAccessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{bonusRefreshToken}}"
+}
+
+
+### B2 - Logout with new refresh token - expect 204
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{bonusAccessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{newRefreshToken}}"
+}
+
+
+### B2 - Reuse logged-out refresh token - expect 401
+POST {{baseUrl}}/api/auth/refresh
+Authorization: Bearer {{bonusAccessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{newRefreshToken}}"
+}
