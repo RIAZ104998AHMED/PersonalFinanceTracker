@@ -1,36 +1,213 @@
 # Personal Finance Tracker
 
-**Student:** Riaz Ahmed  
-**Course:** Backend Development  
-**University:** HITS, Tomsk State University  
+Student: Riaz Ahmed  
+Course: Backend Development  
+University: HITS, Tomsk State University  
 
-## Project Description
 
-Personal Finance Tracker is an ASP.NET Core Web API project developed as part of the Backend Development course.
+# Personal Finance Tracker API
 
-The application will allow users to manage financial accounts, categories, income and expense operations, and view financial statistics for a selected period.
+Personal Finance Tracker is an ASP.NET Core Web API developed for the Backend Development 2026 course.
 
-## Technologies
+The application provides authentication, accounts, categories, income and expense operations, transfers, account balance calculation, and statistics.
 
-- C#
-- ASP.NET Core Web API
-- .NET 10
-- PostgreSQL
-- Entity Framework Core
-- Postman
-- GitLab
+## Technology Stack
 
-## Current Progress
+.NET 10  
+ASP.NET Core Web API  
+Entity Framework Core  
+PostgreSQL  
+ASP.NET Core Identity  
+JWT Authentication  
+OpenAPI / Swagger UI
 
-- ASP.NET Core Web API project created
-- OpenAPI configured
-- Controllers configured
-- Accounts endpoint created
-- GET request returns a hard-coded account list
+## Solution Structure
 
-## Current Endpoint
+The solution contains three projects:
 
-### Get Accounts
+```text
+PersonalFinanceTracker.Api
+PersonalFinanceTracker.BusinessLogic
+PersonalFinanceTracker.DataAccess
+```
+
+`PersonalFinanceTracker.Api` contains controllers, API configuration, authentication configuration, Swagger/OpenAPI, and exception handling.
+
+`PersonalFinanceTracker.BusinessLogic` contains DTOs, interfaces, services, validation, and business rules.
+
+`PersonalFinanceTracker.DataAccess` contains entities, the Entity Framework Core DbContext, migrations, Identity storage, and database configuration.
+
+## Database Configuration
+
+The project uses PostgreSQL.
+
+The default local database used during development is:
+
+```text
+Database: finance_tracker
+PostgreSQL port: 5433
+```
+
+The database connection string should not be committed to the repository.
+
+Configure it with .NET User Secrets from the API project:
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5433;Database=finance_tracker;Username=postgres;Password=YOUR_PASSWORD"
+```
+
+Configure the JWT signing key using User Secrets:
+
+```powershell
+dotnet user-secrets set "Jwt:Key" "YOUR_JWT_KEY_AT_LEAST_32_CHARACTERS_LONG"
+```
+
+The JWT issuer and audience are configured in `appsettings.json`.
+
+The application runs Entity Framework Core migrations automatically during startup and seeds the required demonstration data when necessary.
+
+## Running the Project
+
+Restore the packages:
+
+```powershell
+dotnet restore
+```
+
+Build the solution:
+
+```powershell
+dotnet build
+```
+
+Run the API:
+
+```powershell
+dotnet run --project PersonalFinanceTracker.Api
+```
+
+When running through the current Visual Studio development profile, the HTTP base URL is:
+
+```text
+http://localhost:5126
+```
+
+Swagger UI is available in the Development environment at:
+
+```text
+http://localhost:5126/swagger
+```
+
+The generated OpenAPI document is available at:
+
+```text
+http://localhost:5126/openapi/v1.json
+```
+
+## Demonstration User
+
+The seeded demonstration account is:
+
+```text
+Email: demo@fintracker.local
+Password: Demo12345
+```
+
+The fixed demonstration user identifier is:
+
+```text
+11111111-1111-1111-1111-111111111111
+```
+
+Use the login endpoint to obtain a fresh JWT access token:
 
 ```http
-GET /api/accounts
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@fintracker.local",
+  "password": "Demo12345"
+}
+```
+
+Protected endpoints require:
+
+```text
+Authorization: Bearer <accessToken>
+```
+
+## Implemented API
+
+Authentication and profile functionality includes registration, login, reading the current user, and updating the current user's name.
+
+Account functionality includes listing accounts, creating accounts, reading an account, updating an account, archiving and unarchiving an account, deleting an unused account, and calculating balances dynamically from operations and transfers.
+
+Category functionality includes system and user categories, filtering by operation type, creation, renaming, deletion, duplicate-name validation, and protection of system categories.
+
+Operation functionality includes creation, reading, updating, deletion, paging, date filtering, account filtering, operation-type filtering, and sorting by date or amount.
+
+Transfer functionality includes creation, listing with paging, reading, and deletion. Transfers require two different accounts owned by the same user and using the same currency.
+
+Statistics functionality supports statistics for either one account or all non-archived accounts of one currency. It provides total income, total expense, net value, category breakdown, category shares, and a daily or monthly timeline. Transfers are excluded from income and expense statistics.
+
+## Business Rules
+
+The implementation covers the core project rules R1–R16, including dynamic account balance calculation, amount validation, category/type matching, future-date validation, archived-account restrictions, account deletion and currency-change restrictions, transfer validation, category protections, unique e-mail addresses, password requirements, ownership checks, and statistics validation.
+
+Errors are returned using ProblemDetails. Validation failures use validation error responses, and application exceptions are handled through the global exception handler rather than controller `try/catch` blocks.
+
+## Statistics Verification
+
+For the seeded demonstration data, the following request:
+
+```http
+GET /api/statistics?currency=RUB&from=2026-09-01&to=2026-09-30&groupBy=day
+```
+
+returns:
+
+```text
+Total income: 60000.00
+Total expense: 53370.75
+Net: 6629.25
+```
+
+For the demonstration Debit card account during August 2026:
+
+```text
+Total income: 60000.00
+Total expense: 52040.75
+Net: 7959.25
+```
+
+These values were verified against the required seed data.
+
+## HTTP Request File
+
+`PersonalFinanceTracker.Api.http` contains executable API requests for development and verification.
+
+Before committing the repository, real JWT access tokens should be replaced with placeholders such as:
+
+```text
+@token = PASTE_TOKEN_HERE
+@token2 = PASTE_SECOND_USER_TOKEN_HERE
+@demoToken = PASTE_DEMO_TOKEN_HERE
+```
+
+A fresh token can be obtained through the login endpoint before testing protected endpoints.
+
+## Bonuses
+
+No optional bonus functionality is currently implemented.
+
+The core Project 1 functionality is implemented.
+
+## Project Status
+
+Week 6: completed  
+Week 7: completed  
+Week 8: completed  
+Week 9: completed
+
+The project is ready for Week 10 final corrections, API-contract verification, code freeze, and defense preparation.
