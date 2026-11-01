@@ -199,9 +199,17 @@ A fresh token can be obtained through the login endpoint before testing protecte
 
 ## Bonuses
 
-No optional bonus functionality is currently implemented.
 
-The core Project 1 functionality is implemented.
+### Unit Tests
+
+Implemented an xUnit test project using EF Core InMemory.
+
+The test suite contains 12 passing tests covering the required business rules, including R1, R3, R5, R6, R7, R8, R10 and R12.
+
+Run the tests with:
+
+```powershell
+dotnet test
 
 ## Project Status
 

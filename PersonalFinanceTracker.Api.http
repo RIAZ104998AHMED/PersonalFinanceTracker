@@ -573,3 +573,56 @@ Content-Type: application/json
 ### RUB September 2026 - exact seed-data test
 GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-09-01&to=2026-09-30&groupBy=day
 Authorization: Bearer {{demoToken}}
+
+### ============================================
+### WEEK 9 - MORE STATISTICS TESTS
+### ============================================
+
+### Debit card - August 2026 - expect 200
+GET {{baseUrl}}/api/statistics?accountId=c0000000-0000-0000-0000-000000000002&from=2026-08-01&to=2026-08-31&groupBy=day
+Authorization: Bearer {{demoToken}}
+
+
+### Savings - August + September - expect 200
+GET {{baseUrl}}/api/statistics?accountId=c0000000-0000-0000-0000-000000000003&from=2026-08-01&to=2026-09-30&groupBy=month
+Authorization: Bearer {{demoToken}}
+
+
+### Month grouping - RUB - expect 200
+GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-08-01&to=2026-09-30&groupBy=month
+Authorization: Bearer {{demoToken}}
+
+
+### R16 - both accountId and currency - expect 400
+GET {{baseUrl}}/api/statistics?accountId=c0000000-0000-0000-0000-000000000002&currency=RUB&from=2026-09-01&to=2026-09-30
+Authorization: Bearer {{demoToken}}
+
+
+### R16 - neither accountId nor currency - expect 400
+GET {{baseUrl}}/api/statistics?from=2026-09-01&to=2026-09-30
+Authorization: Bearer {{demoToken}}
+
+
+### Invalid date range - expect 400
+GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-10-20&to=2026-10-01
+Authorization: Bearer {{demoToken}}
+
+
+### R16 - more than 366 days - expect 400
+GET {{baseUrl}}/api/statistics?currency=RUB&from=2025-01-01&to=2026-02-01
+Authorization: Bearer {{demoToken}}
+
+
+### Invalid groupBy - expect 400
+GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-09-01&to=2026-09-30&groupBy=week
+Authorization: Bearer {{demoToken}}
+
+
+### Account does not exist - expect 404
+GET {{baseUrl}}/api/statistics?accountId=99999999-9999-9999-9999-999999999999&from=2026-09-01&to=2026-09-30
+Authorization: Bearer {{demoToken}}
+
+
+### R15 - another user's account - expect 403
+GET {{baseUrl}}/api/statistics?accountId={{otherUserAccountId}}&from=2026-09-01&to=2026-09-30
+Authorization: Bearer {{demoToken}}

@@ -27,4 +27,9 @@
 	<ItemGroup>
 	  <Folder Include="Models\" />
 	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="PersonalFinanceTracker.Tests\**\*.cs" />
+		<EmbeddedResource Remove="PersonalFinanceTracker.Tests\**\*" />
+		<None Remove="PersonalFinanceTracker.Tests\**\*" />
+	</ItemGroup>
 </Project>
