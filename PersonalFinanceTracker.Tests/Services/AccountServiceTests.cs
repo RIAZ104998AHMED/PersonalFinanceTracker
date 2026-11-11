@@ -1,4 +1,5 @@
-﻿using PersonalFinanceTracker.BusinessLogic.DTOs;
+﻿using Microsoft.Extensions.Configuration;
+using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Exceptions;
 using PersonalFinanceTracker.BusinessLogic.Services;
 using PersonalFinanceTracker.DataAccess.Entities;
@@ -10,6 +11,24 @@ public class AccountServiceTests
 {
     private static readonly Guid UserId =
         Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    private static IConfiguration CreateConfiguration()
+    {
+        var settings =
+            new Dictionary<string, string?>
+            {
+                ["Currencies:Allowed:0"] = "RUB",
+                ["Currencies:Allowed:1"] = "USD",
+                ["Currencies:Allowed:2"] = "EUR",
+                ["Currencies:Allowed:3"] = "CNY",
+                ["Currencies:Allowed:4"] = "KZT",
+                ["Currencies:Allowed:5"] = "GBP"
+            };
+
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(settings)
+            .Build();
+    }
 
     [Fact]
     public async Task R1_Balance_ShouldIncludeOperationsAndTransfers()
@@ -51,7 +70,8 @@ public class AccountServiceTests
                 CategoryId = Guid.NewGuid(),
                 Type = OperationType.Income,
                 Amount = 500m,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(
+                    DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow
             },
             new Operation
@@ -61,7 +81,8 @@ public class AccountServiceTests
                 CategoryId = Guid.NewGuid(),
                 Type = OperationType.Expense,
                 Amount = 200m,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(
+                    DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow
             });
 
@@ -72,7 +93,8 @@ public class AccountServiceTests
                 FromAccountId = secondAccount.Id,
                 ToAccountId = account.Id,
                 Amount = 300m,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(
+                    DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow
             },
             new Transfer
@@ -81,14 +103,17 @@ public class AccountServiceTests
                 FromAccountId = account.Id,
                 ToAccountId = secondAccount.Id,
                 Amount = 100m,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(
+                    DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow
             });
 
         await db.SaveChangesAsync();
 
         var service =
-            new AccountService(db);
+            new AccountService(
+                db,
+                CreateConfiguration());
 
         var result =
             await service.GetByIdAsync(
@@ -130,14 +155,17 @@ public class AccountServiceTests
                 CategoryId = Guid.NewGuid(),
                 Type = OperationType.Expense,
                 Amount = 100m,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(
+                    DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow
             });
 
         await db.SaveChangesAsync();
 
         var service =
-            new AccountService(db);
+            new AccountService(
+                db,
+                CreateConfiguration());
 
         await Assert.ThrowsAsync<ConflictException>(
             () => service.DeleteAsync(
@@ -172,14 +200,17 @@ public class AccountServiceTests
                 CategoryId = Guid.NewGuid(),
                 Type = OperationType.Expense,
                 Amount = 50m,
-                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                Date = DateOnly.FromDateTime(
+                    DateTime.UtcNow),
                 CreatedAt = DateTime.UtcNow
             });
 
         await db.SaveChangesAsync();
 
         var service =
-            new AccountService(db);
+            new AccountService(
+                db,
+                CreateConfiguration());
 
         var request =
             new UpdateAccountRequest

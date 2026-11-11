@@ -70,12 +70,25 @@ public sealed class GlobalExceptionHandler
             Instance = httpContext.Request.Path
         };
 
-        await _problemDetailsService.TryWriteAsync(
-            new ProblemDetailsContext
-            {
-                HttpContext = httpContext,
-                ProblemDetails = problemDetails
-            });
+        var written =
+            await _problemDetailsService.TryWriteAsync(
+                new ProblemDetailsContext
+                {
+                    HttpContext = httpContext,
+                    ProblemDetails = problemDetails
+                });
+
+        // Fallback when the request Accept header
+        // does not allow the default ProblemDetails writer.
+        if (!written)
+        {
+            httpContext.Response.ContentType =
+                "application/problem+json";
+
+            await httpContext.Response.WriteAsJsonAsync(
+                problemDetails,
+                cancellationToken);
+        }
 
         return true;
     }

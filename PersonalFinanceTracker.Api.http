@@ -1,15 +1,10 @@
 @baseUrl = http://localhost:5126
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4OTk0YTBhYy04MjI2LTQyOTUtYjIyYS1mMTI4ZGY1NDQyZjgiLCJlbWFpbCI6IndlZWs3dGVzdEBleGFtcGxlLmNvbSIsIm5hbWUiOiJXZWVrIFNldmVuIFVzZXIgVXBkYXRlZCIsImV4cCI6MTc5MzA4NDg0MywiaXNzIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5BcGkiLCJhdWQiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkNsaWVudCJ9.Albxup2lXrJMmCEnaHYjBadYvhbk5k_-l1tOZ4lc3UY
-@accountId = 1ca2c2da-6ade-4ff2-8403-54bea984260f
-@categoryId = dcfbcc97-eaf7-4b17-9d4b-d501ee2956c0
 
-@token2 = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4ODM3OTIyMy0xNjQ3LTQxZGMtYTMxZS1kNTAzZjUyYmMzYTUiLCJlbWFpbCI6IndlZWs3dGVzdDJAZXhhbXBsZS5jb20iLCJuYW1lIjoiV2VlayBTZXZlbiBUZXN0IiwiZXhwIjoxNzkzMDg4MDMxLCJpc3MiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkFwaSIsImF1ZCI6IlBlcnNvbmFsRmluYW5jZVRyYWNrZXIuQ2xpZW50In0.x5cV5xhU6VujsCXfUMkJZNETe5XnJsu36d0j0sIQc2A
-@otherUserAccountId = fb2a8829-fa66-44e6-a3ee-f7945a6403c0
+### =========================================================
+### AUTHENTICATION
+### =========================================================
 
-@demoToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJleHAiOjE3OTM1MzIxODgsImlzcyI6IlBlcnNvbmFsRmluYW5jZVRyYWNrZXIuQXBpIiwiYXVkIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5DbGllbnQifQ.PB5EcLuKWpZ5qsHiegCbYUUHUDHqkfvaHNj_HVICcrM
-@demoDebitAccountId = c0000000-0000-0000-0000-000000000002
-
-### Register
+### Register test user
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
@@ -19,8 +14,10 @@ Content-Type: application/json
   "name": "Week Seven Test"
 }
 
+###
 
-### Login
+### Login primary test user
+# @name primaryLogin
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -29,7 +26,10 @@ Content-Type: application/json
   "password": "Week7Test123"
 }
 
+###
+
 ### Login second user
+# @name secondLogin
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -38,9 +38,12 @@ Content-Type: application/json
   "password": "Week7Test123"
 }
 
+###
+
 ### Create account for second user
+# @name secondAccountCreate
 POST {{baseUrl}}/api/accounts
-Authorization: Bearer {{token2}}
+Authorization: Bearer {{secondLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -49,7 +52,10 @@ Content-Type: application/json
   "startAmount": 500.00
 }
 
-### Login demo user
+###
+
+### Demo login
+# @name demoLogin
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -58,26 +64,41 @@ Content-Type: application/json
   "password": "Demo12345"
 }
 
-### Current user
-GET {{baseUrl}}/api/users/me
-Authorization: Bearer {{token}}
 
-### Update current user
+### =========================================================
+### USERS
+### =========================================================
+
+### Current primary user
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+
+###
+
+### Update current primary user
 PUT {{baseUrl}}/api/users/me
-Authorization: Bearer {{token}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "name": "Week Seven User Updated"
 }
 
+
+### =========================================================
+### ACCOUNTS
+### =========================================================
+
 ### Get accounts
 GET {{baseUrl}}/api/accounts?includeArchived=false
-Authorization: Bearer {{token}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 
-### Create account
+###
+
+### Create primary user's account
+# @name primaryAccountCreate
 POST {{baseUrl}}/api/accounts
-Authorization: Bearer {{token}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -86,13 +107,17 @@ Content-Type: application/json
   "startAmount": 1000.00
 }
 
-### Get one account
-GET {{baseUrl}}/api/accounts/{{accountId}}
-Authorization: Bearer {{token}}
+###
 
-### Update account
-PUT {{baseUrl}}/api/accounts/{{accountId}}
-Authorization: Bearer {{token}}
+### Get created account
+GET {{baseUrl}}/api/accounts/{{primaryAccountCreate.response.body.$.id}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+
+###
+
+### Update created account
+PUT {{baseUrl}}/api/accounts/{{primaryAccountCreate.response.body.$.id}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -101,113 +126,72 @@ Content-Type: application/json
   "startAmount": 1500.00
 }
 
-### Archive account
-PATCH {{baseUrl}}/api/accounts/{{accountId}}/archive
-Authorization: Bearer {{token}}
+###
+
+### Archive created account
+PATCH {{baseUrl}}/api/accounts/{{primaryAccountCreate.response.body.$.id}}/archive
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "isArchived": true
 }
 
+###
+
 ### Get accounts including archived
 GET {{baseUrl}}/api/accounts?includeArchived=true
-Authorization: Bearer {{token}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 
-### Unarchive account
-PATCH {{baseUrl}}/api/accounts/{{accountId}}/archive
-Authorization: Bearer {{token}}
+###
+
+### Unarchive created account
+PATCH {{baseUrl}}/api/accounts/{{primaryAccountCreate.response.body.$.id}}/archive
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "isArchived": false
 }
 
-### Delete account
-DELETE {{baseUrl}}/api/accounts/{{accountId}}
-Authorization: Bearer {{token}}
+###
+
+### Delete created account
+DELETE {{baseUrl}}/api/accounts/{{primaryAccountCreate.response.body.$.id}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
 
 
-### ================================
-### CATEGORIES
-### ================================
+### =========================================================
+### ACCOUNT BUSINESS RULE TESTS
+### =========================================================
 
-### Get all categories
-GET {{baseUrl}}/api/categories
-Authorization: Bearer {{token}}
-
-### Get expense categories
-GET {{baseUrl}}/api/categories?type=Expense
-Authorization: Bearer {{token}}
-
-### Create category
-POST {{baseUrl}}/api/categories
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "name": "Travel",
-  "type": "Expense"
-}
-
-### R10 - Duplicate category - expect 409
-POST {{baseUrl}}/api/categories
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "name": "Travel",
-  "type": "Expense"
-}
-
-### Update category
-PUT {{baseUrl}}/api/categories/{{categoryId}}
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "name": "Holiday Travel"
-}
-
-### R11 - Rename system category - expect 403
-PUT {{baseUrl}}/api/categories/a0000000-0000-0000-0000-000000000001
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "name": "New Salary"
-}
-
-### Category does not exist - expect 404
-PUT {{baseUrl}}/api/categories/99999999-9999-9999-9999-999999999999
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "name": "Test"
-}
-
-### Delete category
-DELETE {{baseUrl}}/api/categories/{{categoryId}}
-Authorization: Bearer {{token}}
 ### Account does not exist - expect 404
 GET {{baseUrl}}/api/accounts/99999999-9999-9999-9999-999999999999
-Authorization: Bearer {{token}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+
+###
 
 ### R15 - Other user's account - expect 403
-GET {{baseUrl}}/api/accounts/{{otherUserAccountId}}
-Authorization: Bearer {{token}}
+GET {{baseUrl}}/api/accounts/{{secondAccountCreate.response.body.$.id}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
-### R6 - Delete used account - expect 409
-DELETE {{baseUrl}}/api/accounts/{{demoDebitAccountId}}
-Authorization: Bearer {{demoToken}}
+###
+
+### R6 - Delete used demo account - expect 409
+DELETE {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+
+###
+
 ### Get demo accounts
 GET {{baseUrl}}/api/accounts?includeArchived=false
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+
+###
 
 ### R7 - Change currency of used account - expect 409
 PUT {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -215,46 +199,131 @@ Content-Type: application/json
   "currency": "USD",
   "startAmount": 42000.00
 }
-### ============================================
+
+
+### =========================================================
+### CATEGORIES
+### =========================================================
+
+### Get all categories
+GET {{baseUrl}}/api/categories
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+
+###
+
+### Get expense categories
+GET {{baseUrl}}/api/categories?type=Expense
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+
+###
+
+### Create category
+# @name primaryCategoryCreate
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Travel",
+  "type": "Expense"
+}
+
+###
+
+### R10 - Duplicate category - expect 409
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Travel",
+  "type": "Expense"
+}
+
+###
+
+### Update created category
+PUT {{baseUrl}}/api/categories/{{primaryCategoryCreate.response.body.$.id}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Holiday Travel"
+}
+
+###
+
+### R11 - Rename system category - expect 403
+PUT {{baseUrl}}/api/categories/a0000000-0000-0000-0000-000000000001
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "New Salary"
+}
+
+###
+
+### Category does not exist - expect 404
+PUT {{baseUrl}}/api/categories/99999999-9999-9999-9999-999999999999
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Test"
+}
+
+###
+
+### Delete created category
+DELETE {{baseUrl}}/api/categories/{{primaryCategoryCreate.response.body.$.id}}
+Authorization: Bearer {{primaryLogin.response.body.$.accessToken}}
+
+
+### =========================================================
 ### WEEK 8 - OPERATIONS
-### ============================================
-
-@operationId = 5d2eb59b-ffc0-4900-bd57-a57cd544fec7
-
+### =========================================================
 
 ### Get operations - default paging/sorting
 GET {{baseUrl}}/api/operations
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Get operations with paging
 GET {{baseUrl}}/api/operations?page=1&pageSize=10
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Filter operations by account
 GET {{baseUrl}}/api/operations?accountId=c0000000-0000-0000-0000-000000000002&page=1&pageSize=20
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Filter Expense operations
 GET {{baseUrl}}/api/operations?type=Expense&page=1&pageSize=20
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Filter by date
+### Filter operations by date
 GET {{baseUrl}}/api/operations?from=2026-09-01&to=2026-09-30
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Sort by amount descending
+### Sort operations by amount descending
 GET {{baseUrl}}/api/operations?sortBy=amountDesc
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Create operation
+# @name createOperation
 POST {{baseUrl}}/api/operations
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -266,15 +335,17 @@ Content-Type: application/json
   "comment": "Groceries"
 }
 
+###
 
-### Get one operation
-GET {{baseUrl}}/api/operations/{{operationId}}
-Authorization: Bearer {{demoToken}}
+### Get created operation
+GET {{baseUrl}}/api/operations/{{createOperation.response.body.$.id}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Update operation
-PUT {{baseUrl}}/api/operations/{{operationId}}
-Authorization: Bearer {{demoToken}}
+### Update created operation
+PUT {{baseUrl}}/api/operations/{{createOperation.response.body.$.id}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -286,19 +357,20 @@ Content-Type: application/json
   "comment": "Dinner"
 }
 
+###
 
-### Delete operation
-DELETE {{baseUrl}}/api/operations/{{operationId}}
-Authorization: Bearer {{demoToken}}
+### Delete created operation
+DELETE {{baseUrl}}/api/operations/{{createOperation.response.body.$.id}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
 
-### ============================================
+### =========================================================
 ### OPERATION BUSINESS RULE TESTS
-### ============================================
+### =========================================================
 
 ### R2 - Amount must be positive - expect 400
 POST {{baseUrl}}/api/operations
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -310,10 +382,11 @@ Content-Type: application/json
   "comment": "Invalid amount"
 }
 
+###
 
-### R2 - More than 2 decimal places - expect 400
+### R2 - More than two decimal places - expect 400
 POST {{baseUrl}}/api/operations
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -325,10 +398,11 @@ Content-Type: application/json
   "comment": "Invalid decimals"
 }
 
+###
 
 ### R3 - Category type mismatch - expect 400
 POST {{baseUrl}}/api/operations
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -340,10 +414,11 @@ Content-Type: application/json
   "comment": "Wrong category type"
 }
 
+###
 
-### R4 - Future date - expect 400
+### R4 - Future operation date - expect 400
 POST {{baseUrl}}/api/operations
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -355,38 +430,46 @@ Content-Type: application/json
   "comment": "Future operation"
 }
 
+###
 
 ### Invalid paging - expect 400
 GET {{baseUrl}}/api/operations?page=0&pageSize=20
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Invalid pageSize - expect 400
 GET {{baseUrl}}/api/operations?page=1&pageSize=101
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Invalid date range - expect 400
+### Invalid operation date range - expect 400
 GET {{baseUrl}}/api/operations?from=2026-10-20&to=2026-10-01
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Invalid sort - expect 400
+### Invalid operation sort - expect 400
 GET {{baseUrl}}/api/operations?sortBy=wrongSort
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+
+###
 
 ### R5 setup - archive demo Debit card
 PATCH {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002/archive
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "isArchived": true
 }
 
+###
+
 ### R5 - Create operation on archived account - expect 409
 POST {{baseUrl}}/api/operations
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -398,34 +481,38 @@ Content-Type: application/json
   "comment": "Archived account test"
 }
 
+###
+
 ### R5 cleanup - unarchive demo Debit card
 PATCH {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002/archive
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "isArchived": false
 }
-### ============================================
+
+
+### =========================================================
 ### WEEK 8 - TRANSFERS
-### ============================================
-
-@transferId = defa4344-b201-4537-987d-3fe1dd0472a1
-
+### =========================================================
 
 ### Get all transfers - expect 200
 GET {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Get transfers with paging - expect 200
 GET {{baseUrl}}/api/transfers?page=1&pageSize=10
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Create transfer - expect 201
+# @name createTransfer
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -436,24 +523,26 @@ Content-Type: application/json
   "comment": "Transfer test"
 }
 
+###
 
-### Get one transfer - expect 200
-GET {{baseUrl}}/api/transfers/{{transferId}}
-Authorization: Bearer {{demoToken}}
+### Get created transfer - expect 200
+GET {{baseUrl}}/api/transfers/{{createTransfer.response.body.$.id}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+
+###
+
+### Delete created transfer - expect 204
+DELETE {{baseUrl}}/api/transfers/{{createTransfer.response.body.$.id}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
 
-### Delete transfer - expect 204
-DELETE {{baseUrl}}/api/transfers/{{transferId}}
-Authorization: Bearer {{demoToken}}
-
-
-### ============================================
+### =========================================================
 ### TRANSFER BUSINESS RULE TESTS
-### ============================================
+### =========================================================
 
-### R2 - Negative amount - expect 400
+### R2 - Negative transfer amount - expect 400
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -463,10 +552,11 @@ Content-Type: application/json
   "date": "2026-10-05"
 }
 
+###
 
 ### R2 - More than two decimals - expect 400
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -476,10 +566,11 @@ Content-Type: application/json
   "date": "2026-10-05"
 }
 
+###
 
-### R4 - Future date - expect 400
+### R4 - Future transfer date - expect 400
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -489,10 +580,11 @@ Content-Type: application/json
   "date": "2027-01-01"
 }
 
+###
 
 ### R8 - Same account - expect 400
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -502,11 +594,12 @@ Content-Type: application/json
   "date": "2026-10-05"
 }
 
+###
 
 ### R8 - Different currencies - expect 400
 ### Debit card = RUB, Savings = USD
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -516,27 +609,34 @@ Content-Type: application/json
   "date": "2026-10-05"
 }
 
+###
 
-### Invalid paging - expect 400
+### Invalid transfer paging - expect 400
 GET {{baseUrl}}/api/transfers?page=0&pageSize=20
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Invalid pageSize - expect 400
+### Invalid transfer pageSize - expect 400
 GET {{baseUrl}}/api/transfers?page=1&pageSize=101
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+
+###
+
 ### R5 setup - archive Cash account
 PATCH {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000001/archive
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "isArchived": true
 }
 
-### R5 - transfer to archived account - expect 409
+###
+
+### R5 - Transfer to archived account - expect 409
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
@@ -546,97 +646,107 @@ Content-Type: application/json
   "date": "2026-10-05"
 }
 
+###
+
 ### R5 cleanup - unarchive Cash
 PATCH {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000001/archive
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "isArchived": false
 }
 
+###
+
 ### R15 - use another user's account in transfer - expect 403
 POST {{baseUrl}}/api/transfers
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
   "fromAccountId": "c0000000-0000-0000-0000-000000000002",
-  "toAccountId": "{{otherUserAccountId}}",
+  "toAccountId": "{{secondAccountCreate.response.body.$.id}}",
   "amount": 100.00,
   "date": "2026-10-05"
 }
-### ============================================
+
+
+### =========================================================
 ### WEEK 9 - STATISTICS
-### ============================================
+### =========================================================
 
 ### RUB September 2026 - exact seed-data test
 GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-09-01&to=2026-09-30&groupBy=day
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
-### ============================================
-### WEEK 9 - MORE STATISTICS TESTS
-### ============================================
+###
 
 ### Debit card - August 2026 - expect 200
 GET {{baseUrl}}/api/statistics?accountId=c0000000-0000-0000-0000-000000000002&from=2026-08-01&to=2026-08-31&groupBy=day
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Savings - August + September - expect 200
 GET {{baseUrl}}/api/statistics?accountId=c0000000-0000-0000-0000-000000000003&from=2026-08-01&to=2026-09-30&groupBy=month
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Month grouping - RUB - expect 200
 GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-08-01&to=2026-09-30&groupBy=month
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### R16 - both accountId and currency - expect 400
 GET {{baseUrl}}/api/statistics?accountId=c0000000-0000-0000-0000-000000000002&currency=RUB&from=2026-09-01&to=2026-09-30
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### R16 - neither accountId nor currency - expect 400
 GET {{baseUrl}}/api/statistics?from=2026-09-01&to=2026-09-30
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Invalid date range - expect 400
+### Invalid statistics date range - expect 400
 GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-10-20&to=2026-10-01
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### R16 - more than 366 days - expect 400
+### R16 - More than 366 days - expect 400
 GET {{baseUrl}}/api/statistics?currency=RUB&from=2025-01-01&to=2026-02-01
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
 ### Invalid groupBy - expect 400
 GET {{baseUrl}}/api/statistics?currency=RUB&from=2026-09-01&to=2026-09-30&groupBy=week
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
+###
 
-### Account does not exist - expect 404
+### Statistics account does not exist - expect 404
 GET {{baseUrl}}/api/statistics?accountId=99999999-9999-9999-9999-999999999999&from=2026-09-01&to=2026-09-30
-Authorization: Bearer {{demoToken}}
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+
+###
+
+### R15 - Statistics for another user's account - expect 403
+GET {{baseUrl}}/api/statistics?accountId={{secondAccountCreate.response.body.$.id}}&from=2026-09-01&to=2026-09-30
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
 
 
-### R15 - another user's account - expect 403
-GET {{baseUrl}}/api/statistics?accountId={{otherUserAccountId}}&from=2026-09-01&to=2026-09-30
-Authorization: Bearer {{demoToken}}
-
-### ============================================
+### =========================================================
 ### BONUS - REFRESH TOKEN + LOGOUT
-### ============================================
-
-@bonusAccessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJuYmYiOjE3OTM1NDkwNjgsImV4cCI6MTc5MzU0OTk2OCwiaXNzIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5BcGkiLCJhdWQiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkNsaWVudCJ9.bUo_zjm0gVAgJDSk-fdflxuuB8K6h_7w-sBiIZE4XVc
-@bonusRefreshToken =C8E6CEC58AF71028DF690AA009DC5FB8FFB227253C94520B534921B38F74E3DDDA8BB33619EE466809CA14D7095AF988B0FEB1DBEB327BA2886AC59CCFCB09B8
-@newRefreshToken = 076474B222D7989FF773B409B8BB5953D5F57DE2183B48D3F16F2EC983F6F536239A8735B8A4B48F0E8AC28C8D57297B2602197DBB0A8AE64FEBB872B504F9FB
-
+### =========================================================
 
 ### Bonus login
+# @name bonusLogin
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -645,51 +755,55 @@ Content-Type: application/json
   "password": "Demo12345"
 }
 
+###
 
 ### B1 - Refresh token - expect 200
+# @name refreshLogin
 POST {{baseUrl}}/api/auth/refresh
-Authorization: Bearer {{bonusAccessToken}}
 Content-Type: application/json
 
 {
-  "refreshToken": "{{bonusRefreshToken}}"
+  "refreshToken": "{{bonusLogin.response.body.$.refreshToken}}"
 }
 
+###
 
 ### B1 - Reuse old refresh token after rotation - expect 401
 POST {{baseUrl}}/api/auth/refresh
-Authorization: Bearer {{bonusAccessToken}}
 Content-Type: application/json
 
 {
-  "refreshToken": "{{bonusRefreshToken}}"
+  "refreshToken": "{{bonusLogin.response.body.$.refreshToken}}"
 }
 
+###
 
 ### B2 - Logout with new refresh token - expect 204
 POST {{baseUrl}}/api/auth/logout
-Authorization: Bearer {{bonusAccessToken}}
+Authorization: Bearer {{refreshLogin.response.body.$.accessToken}}
 Content-Type: application/json
 
 {
-  "refreshToken": "{{newRefreshToken}}"
+  "refreshToken": "{{refreshLogin.response.body.$.refreshToken}}"
 }
 
+###
 
 ### B2 - Reuse logged-out refresh token - expect 401
 POST {{baseUrl}}/api/auth/refresh
-Authorization: Bearer {{bonusAccessToken}}
 Content-Type: application/json
 
 {
-  "refreshToken": "{{newRefreshToken}}"
+  "refreshToken": "{{refreshLogin.response.body.$.refreshToken}}"
 }
 
-### ============================================
+
+### =========================================================
 ### WEEK 10 - FRESH DATABASE TEST
-### ============================================
+### =========================================================
 
 ### Fresh database demo login
+# @name freshDemoLogin
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -697,6 +811,100 @@ Content-Type: application/json
   "email": "demo@fintracker.local",
   "password": "Demo12345"
 }
+
+###
+
 ### Fresh database accounts test
 GET {{baseUrl}}/api/accounts?includeArchived=false
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJlbWFpbCI6ImRlbW9AZmludHJhY2tlci5sb2NhbCIsIm5hbWUiOiJEZW1vIFVzZXIiLCJuYmYiOjE3OTM1NTkxNDgsImV4cCI6MTc5MzU2MDA0OCwiaXNzIjoiUGVyc29uYWxGaW5hbmNlVHJhY2tlci5BcGkiLCJhdWQiOiJQZXJzb25hbEZpbmFuY2VUcmFja2VyLkNsaWVudCJ9.mKlVTutWH0KV2a60PeaV1llIqdRTvGTCafNw2pzRS9I
+Authorization: Bearer {{freshDemoLogin.response.body.$.accessToken}}
+
+
+### =========================================================
+### WEEK 10 - VALIDATION TESTS
+### =========================================================
+
+### Unsupported currency - expect 400
+POST {{baseUrl}}/api/accounts
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Bad Currency Account",
+  "currency": "XYZ",
+  "startAmount": 100.00
+}
+
+###
+
+### More than 2 decimal places - expect 400
+POST {{baseUrl}}/api/accounts
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Decimal Test",
+  "currency": "USD",
+  "startAmount": 100.555
+}
+
+###
+
+### Account name > 100 characters - expect 400
+POST {{baseUrl}}/api/accounts
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "currency": "USD",
+  "startAmount": 100.00
+}
+
+###
+
+### Category name > 50 characters - expect 400
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "type": "Expense"
+}
+
+###
+
+### Comment > 500 characters - expect 400
+POST {{baseUrl}}/api/operations
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "accountId": "c0000000-0000-0000-0000-000000000002",
+  "categoryId": "b0000000-0000-0000-0000-000000000001",
+  "type": "Expense",
+  "amount": 100.00,
+  "date": "2026-10-05",
+  "comment": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+}
+
+###
+
+### Missing isArchived - expect 400
+PATCH {{baseUrl}}/api/accounts/c0000000-0000-0000-0000-000000000002/archive
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+}
+
+###
+
+### User name > 100 characters - expect 400
+PUT {{baseUrl}}/api/users/me
+Authorization: Bearer {{demoLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+}

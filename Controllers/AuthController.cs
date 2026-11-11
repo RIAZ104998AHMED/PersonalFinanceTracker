@@ -61,21 +61,12 @@ public class AuthController : ControllerBase
 
     // BONUS B1
     // POST /api/auth/refresh
-    [Authorize]
     [HttpPost("refresh")]
     public async Task<ActionResult<AuthResponse>> Refresh(
-        RefreshTokenRequest request)
+     RefreshTokenRequest request)
     {
         var result =
             await _authService.RefreshAsync(request);
-
-        if (result is null)
-        {
-            return Problem(
-                statusCode: StatusCodes.Status401Unauthorized,
-                title: "Refresh failed",
-                detail: "The refresh token is invalid, expired, or revoked.");
-        }
 
         return Ok(result);
     }

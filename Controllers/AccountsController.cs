@@ -40,6 +40,18 @@ public class AccountsController : ControllerBase
 
     // GET /api/accounts/{id}
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(
+        typeof(AccountDto),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AccountDto>> GetById(Guid id)
     {
         var userId = GetUserId();
@@ -54,16 +66,20 @@ public class AccountsController : ControllerBase
                 userId.Value,
                 id);
 
-        if (account is null)
-        {
-            return NotFound();
-        }
-
         return Ok(account);
     }
 
     // POST /api/accounts
     [HttpPost]
+    [ProducesResponseType(
+        typeof(AccountDto),
+        StatusCodes.Status201Created)]
+    [ProducesResponseType(
+        typeof(ValidationProblemDetails),
+        StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AccountDto>> Create(
         [FromBody] CreateAccountRequest request)
     {
@@ -84,9 +100,26 @@ public class AccountsController : ControllerBase
             new { id = account.Id },
             account);
     }
-
     // PUT /api/accounts/{id}
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(
+     typeof(AccountDto),
+     StatusCodes.Status200OK)]
+    [ProducesResponseType(
+     typeof(ValidationProblemDetails),
+     StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(
+     typeof(ProblemDetails),
+     StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(
+     typeof(ProblemDetails),
+     StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(
+     typeof(ProblemDetails),
+     StatusCodes.Status404NotFound)]
+    [ProducesResponseType(
+     typeof(ProblemDetails),
+     StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AccountDto>> Update(
         Guid id,
         [FromBody] UpdateAccountRequest request)
@@ -129,7 +162,7 @@ public class AccountsController : ControllerBase
             await _accountService.SetArchivedAsync(
                 userId.Value,
                 id,
-                request.IsArchived);
+                request.IsArchived!.Value);
 
         if (account is null)
         {
@@ -141,6 +174,20 @@ public class AccountsController : ControllerBase
 
     // DELETE /api/accounts/{id}
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(
+        StatusCodes.Status204NoContent)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status404NotFound)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status409Conflict)]                                           
     public async Task<IActionResult> Delete(Guid id)
     {
         var userId = GetUserId();

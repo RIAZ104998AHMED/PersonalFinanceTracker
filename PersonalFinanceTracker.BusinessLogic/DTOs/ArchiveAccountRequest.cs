@@ -1,6 +1,9 @@
-﻿namespace PersonalFinanceTracker.BusinessLogic.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace PersonalFinanceTracker.BusinessLogic.DTOs;
 
 public class ArchiveAccountRequest
 {
-    public bool IsArchived { get; set; }
+    [Required]
+    public bool? IsArchived { get; set; }
 }

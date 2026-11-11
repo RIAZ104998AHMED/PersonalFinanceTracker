@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using PersonalFinanceTracker.Api.Exceptions;
+using Microsoft.OpenApi;
 using PersonalFinanceTracker.BusinessLogic;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -19,12 +20,44 @@ builder.Services
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
+        {
+            Title = "Personal Finance Tracker API",
+            Version = "v1"
+        });
+
+    options.AddSecurityDefinition(
+        "bearer",
+        new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description =
+                "Enter your JWT access token."
+        });
+
+    options.AddSecurityRequirement(
+        document =>
+            new OpenApiSecurityRequirement
+            {
+                [
+                    new OpenApiSecuritySchemeReference(
+                        "bearer",
+                        document)
+                ] = []
+            });
+});
 
 // ProblemDetails + global exception handler
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-
+        
 // Business Logic + Data Access + Identity
 builder.Services.AddBusinessLogic(builder.Configuration);
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Exceptions;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
@@ -10,10 +11,14 @@ namespace PersonalFinanceTracker.BusinessLogic.Services;
 public class AccountService : IAccountService
 {
     private readonly FinanceTrackerDbContext _dbContext;
+    private readonly IConfiguration _configuration;
 
-    public AccountService(FinanceTrackerDbContext dbContext)
+    public AccountService(
+        FinanceTrackerDbContext dbContext,
+        IConfiguration configuration)
     {
         _dbContext = dbContext;
+        _configuration = configuration;
     }
 
     public async Task<IEnumerable<AccountDto>> GetAllAsync(
@@ -46,19 +51,17 @@ public class AccountService : IAccountService
         Guid userId,
         Guid id)
     {
-        // Find by ID first so we can distinguish
-        // 404 from 403.
         var account = await _dbContext.Accounts
             .FirstOrDefaultAsync(a => a.Id == id);
 
-        // R15: resource does not exist
+        // R15 - resource does not exist
         if (account is null)
         {
             throw new NotFoundException(
                 "Account was not found.");
         }
 
-        // R15: resource belongs to another user
+        // R15 - resource belongs to another user
         if (account.UserId != userId)
         {
             throw new ForbiddenException(
@@ -72,14 +75,22 @@ public class AccountService : IAccountService
         Guid userId,
         CreateAccountRequest request)
     {
+        ValidateAccountRequest(
+            request.Name,
+            request.Currency,
+            request.StartAmount);
+
+        var normalizedCurrency =
+            request.Currency
+                .Trim()
+                .ToUpperInvariant();
+
         var account = new Account
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             Name = request.Name.Trim(),
-            Currency = request.Currency
-                .Trim()
-                .ToUpperInvariant(),
+            Currency = normalizedCurrency,
             StartAmount = request.StartAmount,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow
@@ -97,31 +108,36 @@ public class AccountService : IAccountService
         Guid id,
         UpdateAccountRequest request)
     {
-        // Find by ID first.
         var account = await _dbContext.Accounts
             .FirstOrDefaultAsync(a => a.Id == id);
 
-        // R15: nonexistent account
+        // R15 - nonexistent account
         if (account is null)
         {
             throw new NotFoundException(
                 "Account was not found.");
         }
 
-        // R15: account belongs to another user
+        // R15 - belongs to another user
         if (account.UserId != userId)
         {
             throw new ForbiddenException(
                 "You do not have access to this account.");
         }
 
-        var newCurrency = request.Currency
-            .Trim()
-            .ToUpperInvariant();
+        ValidateAccountRequest(
+            request.Name,
+            request.Currency,
+            request.StartAmount);
+
+        var newCurrency =
+            request.Currency
+                .Trim()
+                .ToUpperInvariant();
 
         // R7:
-        // Currency can only be changed when the
-        // account has no operations or transfers.
+        // Currency can only be changed when
+        // the account has no operations/transfers.
         if (!string.Equals(
                 account.Currency,
                 newCurrency,
@@ -129,7 +145,8 @@ public class AccountService : IAccountService
         {
             var hasOperations =
                 await _dbContext.Operations
-                    .AnyAsync(o => o.AccountId == id);
+                    .AnyAsync(
+                        o => o.AccountId == id);
 
             var hasTransfers =
                 await _dbContext.Transfers
@@ -146,7 +163,8 @@ public class AccountService : IAccountService
 
         account.Name = request.Name.Trim();
         account.Currency = newCurrency;
-        account.StartAmount = request.StartAmount;
+        account.StartAmount =
+            request.StartAmount;
 
         await _dbContext.SaveChangesAsync();
 
@@ -161,14 +179,12 @@ public class AccountService : IAccountService
         var account = await _dbContext.Accounts
             .FirstOrDefaultAsync(a => a.Id == id);
 
-        // R15
         if (account is null)
         {
             throw new NotFoundException(
                 "Account was not found.");
         }
 
-        // R15
         if (account.UserId != userId)
         {
             throw new ForbiddenException(
@@ -189,26 +205,23 @@ public class AccountService : IAccountService
         var account = await _dbContext.Accounts
             .FirstOrDefaultAsync(a => a.Id == id);
 
-        // R15
         if (account is null)
         {
             throw new NotFoundException(
                 "Account was not found.");
         }
 
-        // R15
         if (account.UserId != userId)
         {
             throw new ForbiddenException(
                 "You do not have access to this account.");
         }
 
-        // R6:
-        // Account cannot be deleted if it has
-        // operations or transfers.
+        // R6
         var hasOperations =
             await _dbContext.Operations
-                .AnyAsync(o => o.AccountId == id);
+                .AnyAsync(
+                    o => o.AccountId == id);
 
         var hasTransfers =
             await _dbContext.Transfers
@@ -229,34 +242,142 @@ public class AccountService : IAccountService
         return true;
     }
 
-    private async Task<AccountDto> MapAsync(Account account)
+    private void ValidateAccountRequest(
+        string name,
+        string currency,
+        decimal startAmount)
     {
-        var income = await _dbContext.Operations
-            .Where(o =>
-                o.AccountId == account.Id &&
-                o.Type == OperationType.Income)
-            .SumAsync(o => (decimal?)o.Amount)
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new BadRequestException(
+                "Account name is required.");
+        }
+
+        if (name.Trim().Length > 100)
+        {
+            throw new BadRequestException(
+                "Account name cannot exceed 100 characters.");
+        }
+
+        ValidateCurrency(currency);
+
+        ValidateStartAmount(startAmount);
+    }
+
+    private void ValidateCurrency(
+        string currency)
+    {
+        if (string.IsNullOrWhiteSpace(currency))
+        {
+            throw new BadRequestException(
+                "Currency is required.");
+        }
+
+        var normalizedCurrency =
+            currency.Trim().ToUpperInvariant();
+
+        if (normalizedCurrency.Length != 3 ||
+            !normalizedCurrency.All(char.IsLetter))
+        {
+            throw new BadRequestException(
+                "Currency must be a three-letter code.");
+        }
+
+        var allowedCurrencies =
+            _configuration
+                .GetSection("Currencies:Allowed")
+                .GetChildren()
+                .Select(x => x.Value)
+                .Where(x =>
+                    !string.IsNullOrWhiteSpace(x))
+                .Select(x =>
+                    x!.Trim().ToUpperInvariant())
+                .ToList();
+
+        // Safe fallback if configuration is absent.
+        if (allowedCurrencies.Count == 0)
+        {
+            allowedCurrencies =
+            [
+                "RUB",
+                "USD",
+                "EUR",
+                "CNY",
+                "KZT",
+                "GBP"
+            ];
+        }
+
+        if (!allowedCurrencies.Contains(
+                normalizedCurrency))
+        {
+            throw new BadRequestException(
+                "Currency is not supported.");
+        }
+    }
+
+    private static void ValidateStartAmount(
+        decimal startAmount)
+    {
+        if (HasMoreThanTwoDecimalPlaces(
+                startAmount))
+        {
+            throw new BadRequestException(
+                "StartAmount must have at most two fraction digits.");
+        }
+    }
+
+    private static bool
+        HasMoreThanTwoDecimalPlaces(
+            decimal value)
+    {
+        var bits = decimal.GetBits(value);
+
+        var scale =
+            (bits[3] >> 16) & 0xFF;
+
+        return scale > 2;
+    }
+
+    private async Task<AccountDto> MapAsync(
+        Account account)
+    {
+        var income =
+            await _dbContext.Operations
+                .Where(o =>
+                    o.AccountId == account.Id &&
+                    o.Type ==
+                    OperationType.Income)
+                .SumAsync(
+                    o => (decimal?)o.Amount)
             ?? 0m;
 
-        var expense = await _dbContext.Operations
-            .Where(o =>
-                o.AccountId == account.Id &&
-                o.Type == OperationType.Expense)
-            .SumAsync(o => (decimal?)o.Amount)
+        var expense =
+            await _dbContext.Operations
+                .Where(o =>
+                    o.AccountId == account.Id &&
+                    o.Type ==
+                    OperationType.Expense)
+                .SumAsync(
+                    o => (decimal?)o.Amount)
             ?? 0m;
 
         var incomingTransfers =
             await _dbContext.Transfers
                 .Where(t =>
-                    t.ToAccountId == account.Id)
-                .SumAsync(t => (decimal?)t.Amount)
+                    t.ToAccountId ==
+                    account.Id)
+                .SumAsync(
+                    t => (decimal?)t.Amount)
             ?? 0m;
 
         var outgoingTransfers =
             await _dbContext.Transfers
                 .Where(t =>
-                    t.FromAccountId == account.Id)
-                .SumAsync(t => (decimal?)t.Amount)
+                    t.FromAccountId ==
+                    account.Id)
+                .SumAsync(
+                    t => (decimal?)t.Amount)
             ?? 0m;
 
         var balance =

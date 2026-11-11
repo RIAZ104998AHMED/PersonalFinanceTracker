@@ -6,7 +6,9 @@ public class OperationQueryParameters
 {
     public Guid? AccountId { get; set; }
 
-    public Guid? CategoryId { get; set; }
+    // Swagger requires a list:
+    // ?categoryIds=id1&categoryIds=id2
+    public List<Guid>? CategoryIds { get; set; }
 
     public OperationType? Type { get; set; }
 

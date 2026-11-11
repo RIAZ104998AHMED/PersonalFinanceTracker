@@ -30,22 +30,28 @@ public class StatisticsService : IStatisticsService
         var from = parameters.From!.Value;
         var to = parameters.To!.Value;
 
-        var groupBy = string.IsNullOrWhiteSpace(parameters.GroupBy)
-            ? "day"
-            : parameters.GroupBy.Trim().ToLowerInvariant();
+        var groupBy =
+            string.IsNullOrWhiteSpace(parameters.GroupBy)
+                ? "day"
+                : parameters.GroupBy
+                    .Trim()
+                    .ToLowerInvariant();
 
         List<Guid> accountIds;
 
         Guid? resultAccountId = null;
         string? resultCurrency = null;
 
-        // R16 - statistics for ONE account
+        // R16 - statistics for one account
         if (parameters.AccountId.HasValue)
         {
-            var account = await _dbContext.Accounts
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    a => a.Id == parameters.AccountId.Value);
+            var account =
+                await _dbContext.Accounts
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        a =>
+                            a.Id ==
+                            parameters.AccountId.Value);
 
             if (account is null)
             {
@@ -60,12 +66,18 @@ public class StatisticsService : IStatisticsService
                     "You do not have access to this account.");
             }
 
-            accountIds = new List<Guid>
-            {
-                account.Id
-            };
+            accountIds =
+                new List<Guid>
+                {
+                    account.Id
+                };
 
             resultAccountId = account.Id;
+
+            // Required by API contract:
+            // statistics for an account must return
+            // that account's currency.
+            resultCurrency = account.Currency;
         }
         else
         {
@@ -78,14 +90,15 @@ public class StatisticsService : IStatisticsService
 
             ValidateCurrency(currency);
 
-            accountIds = await _dbContext.Accounts
-                .AsNoTracking()
-                .Where(a =>
-                    a.UserId == userId &&
-                    !a.IsArchived &&
-                    a.Currency == currency)
-                .Select(a => a.Id)
-                .ToListAsync();
+            accountIds =
+                await _dbContext.Accounts
+                    .AsNoTracking()
+                    .Where(a =>
+                        a.UserId == userId &&
+                        !a.IsArchived &&
+                        a.Currency == currency)
+                    .Select(a => a.Id)
+                    .ToListAsync();
 
             resultCurrency = currency;
         }
@@ -100,16 +113,16 @@ public class StatisticsService : IStatisticsService
                 resultAccountId);
         }
 
-        // IMPORTANT:
-        // Only Operations are used.
-        // Transfers are excluded from statistics.
-        var operations = await _dbContext.Operations
-            .AsNoTracking()
-            .Where(o =>
-                accountIds.Contains(o.AccountId) &&
-                o.Date >= from &&
-                o.Date <= to)
-            .ToListAsync();
+        // Statistics use operations only.
+        // Transfers are excluded.
+        var operations =
+            await _dbContext.Operations
+                .AsNoTracking()
+                .Where(o =>
+                    accountIds.Contains(o.AccountId) &&
+                    o.Date >= from &&
+                    o.Date <= to)
+                .ToListAsync();
 
         if (operations.Count == 0)
         {
@@ -120,115 +133,145 @@ public class StatisticsService : IStatisticsService
                 resultAccountId);
         }
 
-        var totalIncome = operations
-            .Where(o => o.Type == OperationType.Income)
-            .Sum(o => o.Amount);
+        var totalIncome =
+            operations
+                .Where(o =>
+                    o.Type ==
+                    OperationType.Income)
+                .Sum(o => o.Amount);
 
-        var totalExpense = operations
-            .Where(o => o.Type == OperationType.Expense)
-            .Sum(o => o.Amount);
+        var totalExpense =
+            operations
+                .Where(o =>
+                    o.Type ==
+                    OperationType.Expense)
+                .Sum(o => o.Amount);
 
         var net =
             totalIncome - totalExpense;
 
         // Load category names
-        var categoryIds = operations
-            .Select(o => o.CategoryId)
-            .Distinct()
-            .ToList();
+        var categoryIds =
+            operations
+                .Select(o => o.CategoryId)
+                .Distinct()
+                .ToList();
 
-        var categories = await _dbContext.Categories
-            .AsNoTracking()
-            .Where(c => categoryIds.Contains(c.Id))
-            .ToDictionaryAsync(
-                c => c.Id,
-                c => c.Name);
+        var categories =
+            await _dbContext.Categories
+                .AsNoTracking()
+                .Where(c =>
+                    categoryIds.Contains(c.Id))
+                .ToDictionaryAsync(
+                    c => c.Id,
+                    c => c.Name);
 
         // Category breakdown
-        var byCategory = operations
-            .GroupBy(o => new
-            {
-                o.CategoryId,
-                o.Type
-            })
-            .Select(group =>
-            {
-                var amount =
-                    group.Sum(o => o.Amount);
+        var byCategory =
+            operations
+                .GroupBy(o => new
+                {
+                    o.CategoryId,
+                    o.Type
+                })
+                .Select(group =>
+                {
+                    var amount =
+                        group.Sum(
+                            o => o.Amount);
 
-                var typeTotal =
-                    group.Key.Type == OperationType.Income
-                        ? totalIncome
-                        : totalExpense;
+                    var typeTotal =
+                        group.Key.Type ==
+                        OperationType.Income
+                            ? totalIncome
+                            : totalExpense;
 
-                var share =
-                    typeTotal == 0m
-                        ? 0m
-                        : Math.Round(
-                            amount / typeTotal,
-                            4,
-                            MidpointRounding.AwayFromZero);
+                    var share =
+                        typeTotal == 0m
+                            ? 0m
+                            : Math.Round(
+                                amount / typeTotal,
+                                4,
+                                MidpointRounding
+                                    .AwayFromZero);
 
-                var categoryName =
-                    categories.TryGetValue(
+                    var categoryName =
+                        categories.TryGetValue(
+                            group.Key.CategoryId,
+                            out var name)
+                            ? name
+                            : "Unknown";
+
+                    return new CategoryStatisticsDto(
                         group.Key.CategoryId,
-                        out var name)
-                        ? name
-                        : "Unknown";
+                        categoryName,
+                        group.Key.Type,
+                        amount,
+                        share);
+                })
+                .OrderByDescending(
+                    x => x.Amount)
+                .ToList();
 
-                return new CategoryStatisticsDto(
-                    group.Key.CategoryId,
-                    categoryName,
-                    group.Key.Type,
-                    amount,
-                    share);
-            })
-            .OrderByDescending(x => x.Amount)
-            .ToList();
-
-        // Timeline
         IEnumerable<TimelineStatisticsDto> timeline;
 
         if (groupBy == "month")
         {
-            timeline = operations
-                .GroupBy(o => new
-                {
-                    o.Date.Year,
-                    o.Date.Month
-                })
-                .OrderBy(group => group.Key.Year)
-                .ThenBy(group => group.Key.Month)
-                .Select(group =>
-                    new TimelineStatisticsDto(
-                        $"{group.Key.Year:D4}-{group.Key.Month:D2}",
-                        group
-                            .Where(o =>
-                                o.Type == OperationType.Income)
-                            .Sum(o => o.Amount),
-                        group
-                            .Where(o =>
-                                o.Type == OperationType.Expense)
-                            .Sum(o => o.Amount)))
-                .ToList();
+            timeline =
+                operations
+                    .GroupBy(o => new
+                    {
+                        o.Date.Year,
+                        o.Date.Month
+                    })
+                    .OrderBy(
+                        group =>
+                            group.Key.Year)
+                    .ThenBy(
+                        group =>
+                            group.Key.Month)
+                    .Select(group =>
+                        new TimelineStatisticsDto(
+                            $"{group.Key.Year:D4}-{group.Key.Month:D2}",
+                            group
+                                .Where(o =>
+                                    o.Type ==
+                                    OperationType.Income)
+                                .Sum(o =>
+                                    o.Amount),
+                            group
+                                .Where(o =>
+                                    o.Type ==
+                                    OperationType.Expense)
+                                .Sum(o =>
+                                    o.Amount)))
+                    .ToList();
         }
         else
         {
-            timeline = operations
-                .GroupBy(o => o.Date)
-                .OrderBy(group => group.Key)
-                .Select(group =>
-                    new TimelineStatisticsDto(
-                        group.Key.ToString("yyyy-MM-dd"),
-                        group
-                            .Where(o =>
-                                o.Type == OperationType.Income)
-                            .Sum(o => o.Amount),
-                        group
-                            .Where(o =>
-                                o.Type == OperationType.Expense)
-                            .Sum(o => o.Amount)))
-                .ToList();
+            timeline =
+                operations
+                    .GroupBy(o => o.Date)
+                    .OrderBy(
+                        group =>
+                            group.Key)
+                    .Select(group =>
+                        new TimelineStatisticsDto(
+                            group.Key.ToString(
+                                "yyyy-MM-dd"),
+                            group
+                                .Where(o =>
+                                    o.Type ==
+                                    OperationType.Income)
+                                .Sum(o =>
+                                    o.Amount),
+                            group
+                                .Where(o =>
+                                    o.Type ==
+                                    OperationType.Expense)
+                                .Sum(o =>
+                                    o.Amount)))
+                    .ToList();
         }
 
         return new StatisticsDto
@@ -260,8 +303,11 @@ public class StatisticsService : IStatisticsService
                 "To date is required.");
         }
 
-        var from = parameters.From.Value;
-        var to = parameters.To.Value;
+        var from =
+            parameters.From.Value;
+
+        var to =
+            parameters.To.Value;
 
         if (from > to)
         {
@@ -271,7 +317,8 @@ public class StatisticsService : IStatisticsService
 
         // Inclusive period
         var numberOfDays =
-            to.DayNumber - from.DayNumber + 1;
+            to.DayNumber -
+            from.DayNumber + 1;
 
         // R16
         if (numberOfDays > 366)
@@ -296,7 +343,8 @@ public class StatisticsService : IStatisticsService
         }
 
         var groupBy =
-            string.IsNullOrWhiteSpace(parameters.GroupBy)
+            string.IsNullOrWhiteSpace(
+                parameters.GroupBy)
                 ? "day"
                 : parameters.GroupBy
                     .Trim()
@@ -322,7 +370,8 @@ public class StatisticsService : IStatisticsService
 
         var configuredCurrencies =
             _configuration
-                .GetSection("Currencies:Allowed")
+                .GetSection(
+                    "Currencies:Allowed")
                 .GetChildren()
                 .Select(x => x.Value)
                 .Where(x =>
@@ -333,18 +382,20 @@ public class StatisticsService : IStatisticsService
 
         if (configuredCurrencies.Count == 0)
         {
-            configuredCurrencies = new List<string>
-            {
-                "RUB",
-                "USD",
-                "EUR",
-                "CNY",
-                "KZT",
-                "GBP"
-            };
+            configuredCurrencies =
+                new List<string>
+                {
+                    "RUB",
+                    "USD",
+                    "EUR",
+                    "CNY",
+                    "KZT",
+                    "GBP"
+                };
         }
 
-        if (!configuredCurrencies.Contains(currency))
+        if (!configuredCurrencies.Contains(
+                currency))
         {
             throw new BadRequestException(
                 "Currency is not supported.");
@@ -367,9 +418,11 @@ public class StatisticsService : IStatisticsService
             TotalExpense = 0m,
             Net = 0m,
             ByCategory =
-                Enumerable.Empty<CategoryStatisticsDto>(),
+                Enumerable.Empty<
+                    CategoryStatisticsDto>(),
             Timeline =
-                Enumerable.Empty<TimelineStatisticsDto>()
+                Enumerable.Empty<
+                    TimelineStatisticsDto>()
         };
     }
 }
