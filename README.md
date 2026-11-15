@@ -49,7 +49,7 @@ The configured PostgreSQL database is created and migrated automatically when th
 From the solution root directory:
 
 ```powershell
-dotnet run --project PersonalFinanceTracker.Api.csproj
+dotnet run --project PersonalFinanceTracker.Api/PersonalFinanceTracker.Api.csproj
 ```
 
 Alternatively, run the `PersonalFinanceTracker.Api` project directly from Visual Studio.
