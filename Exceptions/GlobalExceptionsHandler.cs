@@ -58,15 +58,23 @@ public sealed class GlobalExceptionHandler
                 "Unhandled exception occurred.");
         }
 
+        var message = statusCode == 500
+            ? "An unexpected error occurred."
+            : exception.Message;
+
         httpContext.Response.StatusCode = statusCode;
 
-        var problemDetails = new ProblemDetails
+        var problemDetails = new ValidationProblemDetails(
+            new Dictionary<string, string[]>
+            {
+                ["error"] = new[] { message }
+            })
         {
             Status = statusCode,
             Title = title,
             Detail = statusCode == 500
                 ? null
-                : exception.Message,
+                : message,
             Instance = httpContext.Request.Path
         };
 

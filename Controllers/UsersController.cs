@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
-using System.IdentityModel.Tokens.Jwt;
+using PersonalFinanceTracker.Api.Services;
 
 namespace PersonalFinanceTracker.Api.Controllers;
 
@@ -13,23 +13,24 @@ public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
 
-    public UsersController(IUserService userService)
+    private readonly ICurrentUser _currentUser;
+
+    public UsersController(IUserService userService, ICurrentUser currentUser)
     {
         _userService = userService;
+        _currentUser = currentUser;
     }
 
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> GetMe()
     {
-        var userId = GetCurrentUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var user =
-            await _userService.GetByIdAsync(userId.Value);
+            await _userService.GetByIdAsync(userId);
 
         if (user is null)
         {
@@ -43,16 +44,14 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserDto>> UpdateMe(
         [FromBody] UpdateUserRequest request)
     {
-        var userId = GetCurrentUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var user =
             await _userService.UpdateNameAsync(
-                userId.Value,
+                userId,
                 request);
 
         if (user is null)
@@ -63,13 +62,4 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
-    private Guid? GetCurrentUserId()
-    {
-        var sub =
-            User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        return Guid.TryParse(sub, out var userId)
-            ? userId
-            : null;
-    }
 }

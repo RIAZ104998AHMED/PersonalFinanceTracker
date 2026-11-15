@@ -4,14 +4,14 @@
 ### AUTHENTICATION
 ### =========================================================
 
-### Register test user
+### Register primary test user
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
-  "email": "week7test2@example.com",
+  "email": "week7test@example.com",
   "password": "Week7Test123",
-  "name": "Week Seven Test"
+  "name": "Week Seven Primary"
 }
 
 ###
@@ -24,6 +24,18 @@ Content-Type: application/json
 {
   "email": "week7test@example.com",
   "password": "Week7Test123"
+}
+
+###
+
+### Register second test user
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "week7test2@example.com",
+  "password": "Week7Test123",
+  "name": "Week Seven Second"
 }
 
 ###
@@ -63,7 +75,6 @@ Content-Type: application/json
   "email": "demo@fintracker.local",
   "password": "Demo12345"
 }
-
 
 ### =========================================================
 ### USERS

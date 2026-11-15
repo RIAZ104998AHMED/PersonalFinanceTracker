@@ -22,10 +22,11 @@ public class AccountService : IAccountService
     }
 
     public async Task<IEnumerable<AccountDto>> GetAllAsync(
-        Guid userId,
-        bool includeArchived = false)
+    Guid userId,
+    bool includeArchived = false)
     {
         var query = _dbContext.Accounts
+            .AsNoTracking()
             .Where(a => a.UserId == userId);
 
         if (!includeArchived)
@@ -35,16 +36,45 @@ public class AccountService : IAccountService
 
         var accounts = await query
             .OrderBy(a => a.CreatedAt)
+            .Select(a => new AccountDto(
+                a.Id,
+                a.Name,
+                a.Currency,
+                a.StartAmount,
+                a.IsArchived,
+                a.CreatedAt,
+
+                a.StartAmount
+
+                + (_dbContext.Operations
+                    .Where(o =>
+                        o.AccountId == a.Id &&
+                        o.Type == OperationType.Income)
+                    .Sum(o => (decimal?)o.Amount)
+                    ?? 0m)
+
+                - (_dbContext.Operations
+                    .Where(o =>
+                        o.AccountId == a.Id &&
+                        o.Type == OperationType.Expense)
+                    .Sum(o => (decimal?)o.Amount)
+                    ?? 0m)
+
+                + (_dbContext.Transfers
+                    .Where(t =>
+                        t.ToAccountId == a.Id)
+                    .Sum(t => (decimal?)t.Amount)
+                    ?? 0m)
+
+                - (_dbContext.Transfers
+                    .Where(t =>
+                        t.FromAccountId == a.Id)
+                    .Sum(t => (decimal?)t.Amount)
+                    ?? 0m)
+            ))
             .ToListAsync();
 
-        var result = new List<AccountDto>();
-
-        foreach (var account in accounts)
-        {
-            result.Add(await MapAsync(account));
-        }
-
-        return result;
+        return accounts;
     }
 
     public async Task<AccountDto?> GetByIdAsync(

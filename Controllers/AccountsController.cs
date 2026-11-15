@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
-using System.IdentityModel.Tokens.Jwt;
+using PersonalFinanceTracker.Api.Services;
 
 namespace PersonalFinanceTracker.Api.Controllers;
 
@@ -13,9 +13,14 @@ public class AccountsController : ControllerBase
 {
     private readonly IAccountService _accountService;
 
-    public AccountsController(IAccountService accountService)
+    private readonly ICurrentUser _currentUser;
+
+    public AccountsController(
+     IAccountService accountService,
+     ICurrentUser currentUser)
     {
         _accountService = accountService;
+        _currentUser = currentUser;
     }
 
     // GET /api/accounts?includeArchived=false
@@ -23,16 +28,14 @@ public class AccountsController : ControllerBase
     public async Task<ActionResult<IEnumerable<AccountDto>>> GetAll(
         [FromQuery] bool includeArchived = false)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var accounts =
             await _accountService.GetAllAsync(
-                userId.Value,
+                userId,
                 includeArchived);
 
         return Ok(accounts);
@@ -54,16 +57,14 @@ public class AccountsController : ControllerBase
         StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AccountDto>> GetById(Guid id)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var account =
             await _accountService.GetByIdAsync(
-                userId.Value,
+                userId,
                 id);
 
         return Ok(account);
@@ -83,16 +84,14 @@ public class AccountsController : ControllerBase
     public async Task<ActionResult<AccountDto>> Create(
         [FromBody] CreateAccountRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var account =
             await _accountService.CreateAsync(
-                userId.Value,
+                userId,
                 request);
 
         return CreatedAtAction(
@@ -124,16 +123,14 @@ public class AccountsController : ControllerBase
         Guid id,
         [FromBody] UpdateAccountRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var account =
             await _accountService.UpdateAsync(
-                userId.Value,
+                userId,
                 id,
                 request);
 
@@ -151,16 +148,14 @@ public class AccountsController : ControllerBase
         Guid id,
         [FromBody] ArchiveAccountRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var account =
             await _accountService.SetArchivedAsync(
-                userId.Value,
+                userId,
                 id,
                 request.IsArchived!.Value);
 
@@ -190,16 +185,14 @@ public class AccountsController : ControllerBase
         StatusCodes.Status409Conflict)]                                           
     public async Task<IActionResult> Delete(Guid id)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var deleted =
             await _accountService.DeleteAsync(
-                userId.Value,
+                userId,
                 id);
 
         if (!deleted)
@@ -208,16 +201,5 @@ public class AccountsController : ControllerBase
         }
 
         return NoContent();
-    }
-
-    private Guid? GetUserId()
-    {
-        var value =
-            User.FindFirst(
-                JwtRegisteredClaimNames.Sub)?.Value;
-
-        return Guid.TryParse(value, out var userId)
-            ? userId
-            : null;
     }
 }

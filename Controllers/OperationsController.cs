@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PersonalFinanceTracker.Api.Services;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace PersonalFinanceTracker.Api.Controllers;
 
@@ -12,11 +12,13 @@ namespace PersonalFinanceTracker.Api.Controllers;
 public class OperationsController : ControllerBase
 {
     private readonly IOperationService _operationService;
-
+    private readonly ICurrentUser _currentUser;
     public OperationsController(
-        IOperationService operationService)
+        IOperationService operationService,
+        ICurrentUser currentUser)
     {
         _operationService = operationService;
+        _currentUser = currentUser;
     }
 
     // GET /api/operations
@@ -24,16 +26,14 @@ public class OperationsController : ControllerBase
     public async Task<ActionResult<PagedResult<OperationDto>>> GetAll(
         [FromQuery] OperationQueryParameters parameters)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var result =
             await _operationService.GetAllAsync(
-                userId.Value,
+                userId,
                 parameters);
 
         return Ok(result);
@@ -44,16 +44,14 @@ public class OperationsController : ControllerBase
     public async Task<ActionResult<OperationDto>> GetById(
         Guid id)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var operation =
             await _operationService.GetByIdAsync(
-                userId.Value,
+                userId,
                 id);
 
         return Ok(operation);
@@ -64,16 +62,14 @@ public class OperationsController : ControllerBase
     public async Task<ActionResult<OperationDto>> Create(
         [FromBody] CreateOperationRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var operation =
             await _operationService.CreateAsync(
-                userId.Value,
+                userId,
                 request);
 
         return CreatedAtAction(
@@ -88,16 +84,14 @@ public class OperationsController : ControllerBase
         Guid id,
         [FromBody] UpdateOperationRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var operation =
             await _operationService.UpdateAsync(
-                userId.Value,
+                userId,
                 id,
                 request);
 
@@ -109,28 +103,15 @@ public class OperationsController : ControllerBase
     public async Task<IActionResult> Delete(
         Guid id)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         await _operationService.DeleteAsync(
-            userId.Value,
+            userId,
             id);
 
         return NoContent();
-    }
-
-    private Guid? GetUserId()
-    {
-        var value =
-            User.FindFirst(
-                JwtRegisteredClaimNames.Sub)?.Value;
-
-        return Guid.TryParse(value, out var userId)
-            ? userId
-            : null;
     }
 }

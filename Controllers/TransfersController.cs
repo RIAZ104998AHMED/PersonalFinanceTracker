@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
-using System.IdentityModel.Tokens.Jwt;
+using PersonalFinanceTracker.Api.Services;
 
 namespace PersonalFinanceTracker.Api.Controllers;
 
@@ -13,10 +13,14 @@ public class TransfersController : ControllerBase
 {
     private readonly ITransferService _transferService;
 
+    private readonly ICurrentUser _currentUser;
+
     public TransfersController(
-        ITransferService transferService)
+        ITransferService transferService,
+        ICurrentUser currentUser)
     {
         _transferService = transferService;
+        _currentUser = currentUser;
     }
 
     // GET /api/transfers
@@ -24,16 +28,14 @@ public class TransfersController : ControllerBase
     public async Task<ActionResult<PagedResult<TransferDto>>> GetAll(
         [FromQuery] TransferQueryParameters parameters)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var result =
             await _transferService.GetAllAsync(
-                userId.Value,
+                userId,
                 parameters);
 
         return Ok(result);
@@ -44,16 +46,14 @@ public class TransfersController : ControllerBase
     public async Task<ActionResult<TransferDto>> GetById(
         Guid id)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var transfer =
             await _transferService.GetByIdAsync(
-                userId.Value,
+                userId,
                 id);
 
         return Ok(transfer);
@@ -64,16 +64,14 @@ public class TransfersController : ControllerBase
     public async Task<ActionResult<TransferDto>> Create(
         [FromBody] CreateTransferRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var transfer =
             await _transferService.CreateAsync(
-                userId.Value,
+                userId,
                 request);
 
         return CreatedAtAction(
@@ -87,30 +85,16 @@ public class TransfersController : ControllerBase
     public async Task<IActionResult> Delete(
         Guid id)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         await _transferService.DeleteAsync(
-            userId.Value,
+            userId,
             id);
 
         return NoContent();
     }
 
-    private Guid? GetUserId()
-    {
-        var value =
-            User.FindFirst(
-                JwtRegisteredClaimNames.Sub)?.Value;
-
-        return Guid.TryParse(
-            value,
-            out var userId)
-            ? userId
-            : null;
-    }
 }

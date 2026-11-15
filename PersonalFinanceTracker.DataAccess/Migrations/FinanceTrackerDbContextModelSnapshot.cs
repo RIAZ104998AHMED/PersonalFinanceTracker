@@ -17,7 +17,7 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -171,7 +171,8 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<decimal>("StartAmount")
                         .HasPrecision(18, 2)
@@ -181,6 +182,8 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Accounts");
                 });
@@ -265,7 +268,8 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
@@ -274,6 +278,11 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Name", "Type")
+                        .IsUnique();
 
                     b.ToTable("Categories");
                 });
@@ -295,7 +304,8 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -307,6 +317,10 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("Operations");
                 });
@@ -358,7 +372,8 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -373,6 +388,10 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FromAccountId");
+
+                    b.HasIndex("ToAccountId");
 
                     b.ToTable("Transfers");
                 });
@@ -428,6 +447,38 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Account", b =>
+                {
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Category", b =>
+                {
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Operation", b =>
+                {
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.RefreshToken", b =>
                 {
                     b.HasOne("PersonalFinanceTracker.DataAccess.Entities.ApplicationUser", "User")
@@ -437,6 +488,21 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Transfer", b =>
+                {
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("FromAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("ToAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

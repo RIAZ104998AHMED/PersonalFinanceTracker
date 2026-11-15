@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
-using System.IdentityModel.Tokens.Jwt;
+using PersonalFinanceTracker.Api.Services;
 
 namespace PersonalFinanceTracker.Api.Controllers;
 
@@ -13,10 +13,14 @@ public class StatisticsController : ControllerBase
 {
     private readonly IStatisticsService _statisticsService;
 
+    private readonly ICurrentUser _currentUser;
+
     public StatisticsController(
-        IStatisticsService statisticsService)
+        IStatisticsService statisticsService,
+        ICurrentUser currentUser)
     {
         _statisticsService = statisticsService;
+        _currentUser = currentUser;
     }
 
     // GET /api/statistics
@@ -24,31 +28,16 @@ public class StatisticsController : ControllerBase
     public async Task<ActionResult<StatisticsDto>> Get(
         [FromQuery] StatisticsQueryParameters parameters)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var result =
             await _statisticsService.GetAsync(
-                userId.Value,
+                userId,
                 parameters);
 
         return Ok(result);
-    }
-
-    private Guid? GetUserId()
-    {
-        var value =
-            User.FindFirst(
-                JwtRegisteredClaimNames.Sub)?.Value;
-
-        return Guid.TryParse(
-            value,
-            out var userId)
-            ? userId
-            : null;
     }
 }

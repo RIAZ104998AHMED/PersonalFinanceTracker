@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PersonalFinanceTracker.BusinessLogic.DTOs;
 using PersonalFinanceTracker.BusinessLogic.Interfaces;
 using PersonalFinanceTracker.DataAccess.Entities;
-using System.IdentityModel.Tokens.Jwt;
+using PersonalFinanceTracker.Api.Services;
 
 namespace PersonalFinanceTracker.Api.Controllers;
 
@@ -13,11 +13,14 @@ namespace PersonalFinanceTracker.Api.Controllers;
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
+    private readonly ICurrentUser _currentUser;
 
     public CategoriesController(
-        ICategoryService categoryService)
+        ICategoryService categoryService,
+        ICurrentUser currentUser)
     {
         _categoryService = categoryService;
+        _currentUser = currentUser;
     }
 
     // GET /api/categories?type=Expense
@@ -25,16 +28,14 @@ public class CategoriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll(
         [FromQuery] OperationType? type = null)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var categories =
             await _categoryService.GetAllAsync(
-                userId.Value,
+                userId,
                 type);
 
         return Ok(categories);
@@ -45,16 +46,14 @@ public class CategoriesController : ControllerBase
     public async Task<ActionResult<CategoryDto>> Create(
         [FromBody] CreateCategoryRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var category =
             await _categoryService.CreateAsync(
-                userId.Value,
+                userId,
                 request);
 
         return Created(
@@ -68,16 +67,14 @@ public class CategoriesController : ControllerBase
         Guid id,
         [FromBody] UpdateCategoryRequest request)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         var category =
             await _categoryService.UpdateAsync(
-                userId.Value,
+                userId,
                 id,
                 request);
 
@@ -88,28 +85,16 @@ public class CategoriesController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var userId = GetUserId();
-
-        if (userId is null)
+        if (_currentUser.UserId is not Guid userId)
         {
             return Unauthorized();
         }
 
         await _categoryService.DeleteAsync(
-            userId.Value,
+            userId,
             id);
 
         return NoContent();
     }
 
-    private Guid? GetUserId()
-    {
-        var value =
-            User.FindFirst(
-                JwtRegisteredClaimNames.Sub)?.Value;
-
-        return Guid.TryParse(value, out var userId)
-            ? userId
-            : null;
-    }
 }

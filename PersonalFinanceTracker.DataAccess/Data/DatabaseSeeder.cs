@@ -18,14 +18,38 @@ public static class DatabaseSeeder
         Guid.Parse("c0000000-0000-0000-0000-000000000003");
 
     public static async Task SeedAsync(
-        FinanceTrackerDbContext dbContext)
+     FinanceTrackerDbContext dbContext)
     {
+        // Seed data only on a fresh/empty domain database.
+        // If any domain data already exists, do not recreate
+        // deleted seed records on later application restarts.
+        var hasExistingData =
+            await dbContext.Accounts.AnyAsync() ||
+            await dbContext.Categories.AnyAsync() ||
+            await dbContext.Operations.AnyAsync() ||
+            await dbContext.Transfers.AnyAsync();
+
+        if (hasExistingData)
+        {
+            return;
+        }
+
         var seedTime = DateTime.UtcNow;
 
-        await SeedSystemCategoriesAsync(dbContext);
-        await SeedDemoAccountsAsync(dbContext, seedTime);
-        await SeedDemoOperationsAsync(dbContext, seedTime);
-        await SeedDemoTransfersAsync(dbContext, seedTime);
+        await SeedSystemCategoriesAsync(
+            dbContext);
+
+        await SeedDemoAccountsAsync(
+            dbContext,
+            seedTime);
+
+        await SeedDemoOperationsAsync(
+            dbContext,
+            seedTime);
+
+        await SeedDemoTransfersAsync(
+            dbContext,
+            seedTime);
     }
 
     private static async Task SeedSystemCategoriesAsync(
