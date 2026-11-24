@@ -25,6 +25,15 @@ public class FinanceTrackerDbContext
     public DbSet<RefreshToken> RefreshTokens =>
         Set<RefreshToken>();
 
+    public DbSet<ExchangeRate> ExchangeRates =>
+        Set<ExchangeRate>();
+
+    public DbSet<RecurringOperation> RecurringOperations =>
+        Set<RecurringOperation>();
+
+    public DbSet<Attachment> Attachments =>
+        Set<Attachment>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -49,13 +58,11 @@ public class FinanceTrackerDbContext
             entity.Property(a => a.StartAmount)
                 .HasPrecision(18, 2);
 
-            // FK: Account -> User
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Index on FK
             entity.HasIndex(a => a.UserId);
         });
 
@@ -71,17 +78,13 @@ public class FinanceTrackerDbContext
                 .HasMaxLength(50)
                 .IsRequired();
 
-            // System categories have UserId = null.
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Index on FK
             entity.HasIndex(c => c.UserId);
 
-            // Required by assignment:
-            // unique category per UserId + Name + Type
             entity.HasIndex(c => new
             {
                 c.UserId,
@@ -117,9 +120,25 @@ public class FinanceTrackerDbContext
                 .HasForeignKey(o => o.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Indexes on foreign keys
+            // FK: Operation -> RecurringOperation
+            entity.HasOne<RecurringOperation>()
+                .WithMany()
+                .HasForeignKey(o => o.RecurringOperationId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             entity.HasIndex(o => o.AccountId);
+
             entity.HasIndex(o => o.CategoryId);
+
+            entity.HasIndex(o => o.RecurringOperationId);
+
+            // One occurrence can create at most one operation.
+            entity.HasIndex(o => new
+            {
+                o.RecurringOperationId,
+                o.Date
+            })
+                .IsUnique();
         });
 
         // =====================================================
@@ -136,21 +155,100 @@ public class FinanceTrackerDbContext
             entity.Property(t => t.Comment)
                 .HasMaxLength(500);
 
-            // FK: Transfer -> FromAccount
             entity.HasOne<Account>()
                 .WithMany()
                 .HasForeignKey(t => t.FromAccountId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // FK: Transfer -> ToAccount
             entity.HasOne<Account>()
                 .WithMany()
                 .HasForeignKey(t => t.ToAccountId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Indexes on foreign keys
             entity.HasIndex(t => t.FromAccountId);
+
             entity.HasIndex(t => t.ToAccountId);
+        });
+
+        // =====================================================
+        // RECURRING OPERATIONS
+        // =====================================================
+
+        modelBuilder.Entity<RecurringOperation>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Amount)
+                .HasPrecision(18, 2);
+
+            entity.Property(r => r.Comment)
+                .HasMaxLength(500);
+
+            entity.HasOne<Account>()
+                .WithMany()
+                .HasForeignKey(r => r.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<Category>()
+                .WithMany()
+                .HasForeignKey(r => r.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(r => r.AccountId);
+
+            entity.HasIndex(r => r.CategoryId);
+        });
+
+        // =====================================================
+        // EXCHANGE RATES
+        // =====================================================
+
+        modelBuilder.Entity<ExchangeRate>(entity =>
+        {
+            entity.HasKey(r => new
+            {
+                r.Date,
+                r.Currency
+            });
+
+            entity.Property(r => r.Currency)
+                .HasMaxLength(3)
+                .IsRequired();
+
+            entity.Property(r => r.Rate)
+                .HasPrecision(18, 6);
+
+            entity.HasIndex(r => new
+            {
+                r.Date,
+                r.Currency
+            })
+                .IsUnique();
+        });
+
+        // =====================================================
+        // ATTACHMENTS
+        // =====================================================
+
+        modelBuilder.Entity<Attachment>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.FileName)
+                .IsRequired();
+
+            entity.Property(a => a.ContentType)
+                .IsRequired();
+
+            entity.Property(a => a.StorageKey)
+                .IsRequired();
+
+            entity.HasOne<Operation>()
+                .WithMany()
+                .HasForeignKey(a => a.OperationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(a => a.OperationId);
         });
 
         // =====================================================

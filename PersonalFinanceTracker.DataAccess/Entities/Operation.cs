@@ -8,6 +8,8 @@ public class Operation
 
     public Guid CategoryId { get; set; }
 
+    public Guid? RecurringOperationId { get; set; }
+
     public OperationType Type { get; set; }
 
     public decimal Amount { get; set; }

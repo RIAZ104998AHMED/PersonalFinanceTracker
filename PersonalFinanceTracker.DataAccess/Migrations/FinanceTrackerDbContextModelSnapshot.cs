@@ -260,6 +260,40 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Attachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperationId");
+
+                    b.ToTable("Attachments");
+                });
+
             modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -285,6 +319,27 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .IsUnique();
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.ExchangeRate", b =>
+                {
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.HasKey("Date", "Currency");
+
+                    b.HasIndex("Date", "Currency")
+                        .IsUnique();
+
+                    b.ToTable("ExchangeRates");
                 });
 
             modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Operation", b =>
@@ -313,6 +368,9 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
+                    b.Property<Guid?>("RecurringOperationId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
@@ -322,7 +380,62 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("RecurringOperationId");
+
+                    b.HasIndex("RecurringOperationId", "Date")
+                        .IsUnique();
+
                     b.ToTable("Operations");
+                });
+
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.RecurringOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly>("NextRunDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("RecurringOperations");
                 });
 
             modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.RefreshToken", b =>
@@ -456,6 +569,15 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Attachment", b =>
+                {
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Operation", null)
+                        .WithMany()
+                        .HasForeignKey("OperationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Category", b =>
                 {
                     b.HasOne("PersonalFinanceTracker.DataAccess.Entities.ApplicationUser", null)
@@ -465,6 +587,26 @@ namespace PersonalFinanceTracker.DataAccess.Migrations
                 });
 
             modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.Operation", b =>
+                {
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PersonalFinanceTracker.DataAccess.Entities.RecurringOperation", null)
+                        .WithMany()
+                        .HasForeignKey("RecurringOperationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("PersonalFinanceTracker.DataAccess.Entities.RecurringOperation", b =>
                 {
                     b.HasOne("PersonalFinanceTracker.DataAccess.Entities.Account", null)
                         .WithMany()
