@@ -111,9 +111,7 @@ public class AccountService : IAccountService
             request.StartAmount);
 
         var normalizedCurrency =
-            request.Currency
-                .Trim()
-                .ToUpperInvariant();
+    request.Currency.Trim();
 
         var account = new Account
         {
@@ -159,11 +157,9 @@ public class AccountService : IAccountService
             request.Name,
             request.Currency,
             request.StartAmount);
-
+        
         var newCurrency =
-            request.Currency
-                .Trim()
-                .ToUpperInvariant();
+     request.Currency.Trim();
 
         // R7:
         // Currency can only be changed when
@@ -295,7 +291,7 @@ public class AccountService : IAccountService
     }
 
     private void ValidateCurrency(
-        string currency)
+    string currency)
     {
         if (string.IsNullOrWhiteSpace(currency))
         {
@@ -303,14 +299,19 @@ public class AccountService : IAccountService
                 "Currency is required.");
         }
 
-        var normalizedCurrency =
-            currency.Trim().ToUpperInvariant();
+        var trimmedCurrency = currency.Trim();
 
-        if (normalizedCurrency.Length != 3 ||
-            !normalizedCurrency.All(char.IsLetter))
+        if (trimmedCurrency.Length != 3 ||
+            !trimmedCurrency.All(char.IsLetter))
         {
             throw new BadRequestException(
                 "Currency must be a three-letter code.");
+        }
+
+        if (trimmedCurrency != trimmedCurrency.ToUpperInvariant())
+        {
+            throw new BadRequestException(
+                "Currency must be uppercase.");
         }
 
         var allowedCurrencies =
@@ -321,25 +322,24 @@ public class AccountService : IAccountService
                 .Where(x =>
                     !string.IsNullOrWhiteSpace(x))
                 .Select(x =>
-                    x!.Trim().ToUpperInvariant())
+                    x!.Trim())
                 .ToList();
 
-        // Safe fallback if configuration is absent.
         if (allowedCurrencies.Count == 0)
         {
             allowedCurrencies =
             [
                 "RUB",
-                "USD",
-                "EUR",
-                "CNY",
-                "KZT",
-                "GBP"
+            "USD",
+            "EUR",
+            "CNY",
+            "KZT",
+            "GBP"
             ];
         }
 
         if (!allowedCurrencies.Contains(
-                normalizedCurrency))
+                trimmedCurrency))
         {
             throw new BadRequestException(
                 "Currency is not supported.");

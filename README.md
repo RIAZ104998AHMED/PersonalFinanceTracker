@@ -207,3 +207,12 @@ dotnet test
 The file uses named requests and tokens returned by login responses instead of hard-coded access tokens.
 
 On a fresh database, run the authentication requests first so that required test users are registered before later requests are executed.
+
+## Bonus Features
+
+The following bonus features are implemented:
+
+- **B1 — Refresh Tokens:** users can obtain a new access token using a valid refresh token through `POST /api/auth/refresh`.
+- **B2 — Logout / Token Revocation:** refresh tokens can be revoked through `POST /api/auth/logout`.
+- Refresh tokens are rotated after use and revoked tokens cannot be reused.
+- Unit tests cover the main business rules and bonus functionality.
