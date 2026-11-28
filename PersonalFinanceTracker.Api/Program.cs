@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using PersonalFinanceTracker.Api.Exceptions;
 using PersonalFinanceTracker.Api.Services;
 using PersonalFinanceTracker.BusinessLogic;
+using PersonalFinanceTracker.BusinessLogic.Configuration;
+using PersonalFinanceTracker.BusinessLogic.Interfaces;
+using PersonalFinanceTracker.BusinessLogic.Services;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -61,6 +65,49 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // Business Logic + Data Access + Identity
 builder.Services.AddBusinessLogic(builder.Configuration);
+
+builder.Services.AddScoped<
+    IExchangeRateService,
+    ExchangeRateService>();
+
+builder.Services
+    .AddOptions<ExchangeRatesOptions>()
+    .Bind(
+        builder.Configuration
+            .GetSection(
+                ExchangeRatesOptions.SectionName))
+    .Validate(
+        options =>
+            Uri.TryCreate(
+                options.BaseUrl,
+                UriKind.Absolute,
+                out _),
+        "ExchangeRates:BaseUrl must be a valid absolute URL.")
+    .Validate(
+        options =>
+            options.TimeoutSeconds > 0,
+        "ExchangeRates:TimeoutSeconds must be greater than zero.")
+    .ValidateOnStart();
+
+builder.Services
+    .AddHttpClient<IExchangeRateClient,
+        BankOfRussiaExchangeRateClient>(
+        (serviceProvider, client) =>
+        {
+            var options =
+                serviceProvider
+                    .GetRequiredService<
+                        IOptions<ExchangeRatesOptions>>()
+                    .Value;
+
+            client.BaseAddress =
+                new Uri(options.BaseUrl);
+
+            client.Timeout =
+                TimeSpan.FromSeconds(
+                    options.TimeoutSeconds);
+        })
+    .AddStandardResilienceHandler();
 // Current authenticated user
 builder.Services.AddHttpContextAccessor();
 

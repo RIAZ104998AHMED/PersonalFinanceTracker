@@ -38,6 +38,9 @@ public sealed class GlobalExceptionHandler
             ConflictException =>
                 StatusCodes.Status409Conflict,
 
+            ServiceUnavailableException =>
+                StatusCodes.Status503ServiceUnavailable,
+
             _ =>
                 StatusCodes.Status500InternalServerError
         };
@@ -48,6 +51,7 @@ public sealed class GlobalExceptionHandler
             403 => "Forbidden",
             404 => "Not Found",
             409 => "Conflict",
+            503 => "Service Unavailable",
             _ => "Internal Server Error"
         };
 
