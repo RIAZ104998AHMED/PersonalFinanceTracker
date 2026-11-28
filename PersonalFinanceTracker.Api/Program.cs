@@ -70,6 +70,10 @@ builder.Services.AddScoped<
     IExchangeRateService,
     ExchangeRateService>();
 
+builder.Services.AddScoped<
+    IAccountSummaryService,
+    AccountSummaryService>();
+
 builder.Services
     .AddOptions<ExchangeRatesOptions>()
     .Bind(

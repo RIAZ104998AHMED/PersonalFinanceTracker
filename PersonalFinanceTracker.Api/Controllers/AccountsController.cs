@@ -202,4 +202,39 @@ public class AccountsController : ControllerBase
 
         return NoContent();
     }
+
+    // GET /api/accounts/summary?currency=USD&date=2026-09-30
+    [HttpGet("summary")]
+    [ProducesResponseType(
+        typeof(AccountSummaryDto),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(
+        typeof(ValidationProblemDetails),
+        StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(
+        typeof(ProblemDetails),
+        StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<AccountSummaryDto>> GetSummary(
+        [FromQuery] string currency,
+        [FromQuery] DateOnly? date,
+        [FromServices] IAccountSummaryService accountSummaryService,
+        CancellationToken cancellationToken)
+    {
+        if (_currentUser.UserId is not Guid userId)
+        {
+            return Unauthorized();
+        }
+
+        var result =
+            await accountSummaryService.GetSummaryAsync(
+                userId,
+                currency,
+                date,
+                cancellationToken);
+
+        return Ok(result);
+    }
 }
