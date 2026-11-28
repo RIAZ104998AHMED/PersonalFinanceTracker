@@ -24,10 +24,11 @@ public static class DatabaseSeeder
         // If any domain data already exists, do not recreate
         // deleted seed records on later application restarts.
         var hasExistingData =
-            await dbContext.Accounts.AnyAsync() ||
-            await dbContext.Categories.AnyAsync() ||
-            await dbContext.Operations.AnyAsync() ||
-            await dbContext.Transfers.AnyAsync();
+    await dbContext.Accounts.AnyAsync() ||
+    await dbContext.Categories.AnyAsync() ||
+    await dbContext.Operations.AnyAsync() ||
+    await dbContext.Transfers.AnyAsync() ||
+    await dbContext.RecurringOperations.AnyAsync();
 
         if (hasExistingData)
         {
@@ -50,6 +51,10 @@ public static class DatabaseSeeder
         await SeedDemoTransfersAsync(
             dbContext,
             seedTime);
+
+        await SeedRecurringOperationsAsync(
+    dbContext,
+    seedTime);
     }
 
     private static async Task SeedSystemCategoriesAsync(
@@ -402,6 +407,86 @@ public static class DatabaseSeeder
                 await dbContext.Transfers.AddAsync(transfer);
             }
         }
+
+        await dbContext.SaveChangesAsync();
+    }
+    private static async Task SeedRecurringOperationsAsync(
+    FinanceTrackerDbContext dbContext,
+    DateTime seedTime)
+    {
+        var rentCategoryId =
+            Guid.Parse(
+                "b0000000-0000-0000-0000-000000000006");
+
+        var scholarshipCategoryId =
+            Guid.Parse(
+                "a0000000-0000-0000-0000-000000000002");
+
+        var recurringOperations = new[]
+        {
+        new RecurringOperation
+        {
+            Id = Guid.Parse(
+                "f0000000-0000-0000-0000-000000000001"),
+
+            AccountId = DebitCardId,
+
+            CategoryId = rentCategoryId,
+
+            Type = OperationType.Expense,
+
+            Amount = 25000.00m,
+
+            Comment = "Rent",
+
+            Frequency = Frequency.Monthly,
+
+            StartDate =
+                new DateOnly(2026, 10, 5),
+
+            EndDate = null,
+
+            NextRunDate =
+                new DateOnly(2026, 10, 5),
+
+            IsActive = false,
+
+            CreatedAt = seedTime
+        },
+
+        new RecurringOperation
+        {
+            Id = Guid.Parse(
+                "f0000000-0000-0000-0000-000000000002"),
+
+            AccountId = SavingsId,
+
+            CategoryId = scholarshipCategoryId,
+
+            Type = OperationType.Income,
+
+            Amount = 300.00m,
+
+            Comment = "Scholarship",
+
+            Frequency = Frequency.Monthly,
+
+            StartDate =
+                new DateOnly(2026, 10, 1),
+
+            EndDate = null,
+
+            NextRunDate =
+                new DateOnly(2026, 10, 1),
+
+            IsActive = false,
+
+            CreatedAt = seedTime
+        }
+    };
+
+        await dbContext.RecurringOperations
+            .AddRangeAsync(recurringOperations);
 
         await dbContext.SaveChangesAsync();
     }
